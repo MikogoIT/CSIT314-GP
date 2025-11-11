@@ -54,7 +54,7 @@ const Navbar = ({ userType, user }) => {
               </>
             )}
             
-            {userType === 'admin' && (
+            {(userType === 'system_admin' || userType === 'platform_manager') && (
               <>
                 <li><Link to="/admin/dashboard" className="nav-link">{t('nav.admin.dashboard')}</Link></li>
                 <li><Link to="/admin/categories" className="nav-link">{t('nav.admin.categories')}</Link></li>

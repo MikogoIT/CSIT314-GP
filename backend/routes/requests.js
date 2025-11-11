@@ -73,7 +73,7 @@ const createRequestValidation = [
 router.get('/', 
   [
     query('page').optional().isInt({ min: 1 }).withMessage('页码必须是正整数'),
-    query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('每页数量必须在1-100之间'),
+    query('limit').optional().isInt({ min: 1, max: 10000 }).withMessage('每页数量必须在1-10000之间'),
     query('category').optional().isIn(['medical', 'transportation', 'shopping', 'household', 'technology', 'companion', 'other']),
     query('urgency').optional().isIn(['low', 'medium', 'high', 'urgent']),
     query('status').optional().isIn(['pending', 'matched', 'completed', 'cancelled', 'expired'])

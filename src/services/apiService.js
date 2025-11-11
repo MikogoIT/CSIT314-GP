@@ -55,8 +55,14 @@ class ApiService {
   }
 
   // GET请求
-  async get(endpoint) {
-    return this.request(endpoint, { method: 'GET' });
+  async get(endpoint, options = {}) {
+    // 处理查询参数
+    let url = endpoint;
+    if (options.params) {
+      const queryString = new URLSearchParams(options.params).toString();
+      url = `${endpoint}${endpoint.includes('?') ? '&' : '?'}${queryString}`;
+    }
+    return this.request(url, { method: 'GET' });
   }
 
   // POST请求
@@ -86,10 +92,17 @@ class ApiService {
     return response.data || [];
   }
 
-  async getAllUsers() {
+  async getAllUsers(params = {}) {
     // 管理员获取所有用户的方法
-    const response = await this.get('/admin/users');
-    return response.data || [];
+    // 默认获取所有数据（limit=1000），除非指定了分页参数
+    const queryParams = {
+      limit: 1000,
+      page: 1,
+      ...params
+    };
+    const response = await this.get('/admin/users', { params: queryParams });
+    // 后端返回的是 { users: [...], pagination: {...} }
+    return response.data?.users || [];
   }
 
   async batchUpdateUsers(action, userIds) {
@@ -146,15 +159,28 @@ class ApiService {
   }
 
   // 请求相关API
-  async getRequests() {
-    const response = await this.get('/requests');
+  async getRequests(params = {}) {
+    // 默认获取所有数据（limit=1000），除非指定了分页参数
+    const queryParams = {
+      limit: 1000,
+      page: 1,
+      ...params
+    };
+    const response = await this.get('/requests', { params: queryParams });
     return response.data || [];
   }
 
-  async getAllRequests() {
-    // 管理员获取所有请求的方法
-    const response = await this.get('/admin/requests');
-    return response.data || [];
+  async getAllRequests(params = {}) {
+    // 管理员获取所有请求的方法 - 使用通用的 /requests 端点
+    // 默认获取所有数据（limit=1000），除非指定了分页参数
+    const queryParams = {
+      limit: 1000,
+      page: 1,
+      ...params
+    };
+    const response = await this.get('/requests', { params: queryParams });
+    // 后端返回的是 { requests: [...], pagination: {...} }
+    return response.data?.requests || [];
   }
 
   async getRequestById(id) {

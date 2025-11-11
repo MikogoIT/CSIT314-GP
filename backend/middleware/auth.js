@@ -88,8 +88,27 @@ const authorize = (...roles) => {
   };
 };
 
-// 仅管理员权限
-const adminOnly = authorize('admin');
+// 仅管理员权限 (任意管理员类型)
+const adminOnly = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      error: 'Authentication required',
+      code: 'AUTH_REQUIRED'
+    });
+  }
+  
+  const adminTypes = ['system_admin', 'platform_manager'];
+  if (!adminTypes.includes(req.user.userType) && !req.user.isSuper) {
+    return res.status(403).json({
+      success: false,
+      error: 'Access denied. Administrator privileges required.',
+      code: 'ADMIN_REQUIRED'
+    });
+  }
+  
+  next();
+};
 
 // 超级管理员权限检查
 const superAdminOnly = (req, res, next) => {
@@ -101,6 +120,76 @@ const superAdminOnly = (req, res, next) => {
     });
   }
   next();
+};
+
+// System Admin 权限检查
+const systemAdminOnly = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      error: 'Authentication required',
+      code: 'AUTH_REQUIRED'
+    });
+  }
+  
+  if (req.user.userType !== 'system_admin' && !req.user.isSuper) {
+    return res.status(403).json({
+      success: false,
+      error: 'Access denied. System Administrator privileges required.',
+      code: 'SYSTEM_ADMIN_REQUIRED'
+    });
+  }
+  
+  next();
+};
+
+// Platform Manager 权限检查
+const platformManagerOnly = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      error: 'Authentication required',
+      code: 'AUTH_REQUIRED'
+    });
+  }
+  
+  if (req.user.userType !== 'platform_manager' && !req.user.isSuper) {
+    return res.status(403).json({
+      success: false,
+      error: 'Access denied. Platform Manager privileges required.',
+      code: 'PLATFORM_MANAGER_REQUIRED'
+    });
+  }
+  
+  next();
+};
+
+// 任意管理员类型都可访问
+const anyAdminType = (...adminTypes) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required',
+        code: 'AUTH_REQUIRED'
+      });
+    }
+    
+    // 超级管理员拥有所有权限
+    if (req.user.isSuper) {
+      return next();
+    }
+    
+    if (!adminTypes.includes(req.user.userType)) {
+      return res.status(403).json({
+        success: false,
+        error: `Access denied. Required admin types: ${adminTypes.join(', ')}`,
+        code: 'INSUFFICIENT_ADMIN_PERMISSIONS'
+      });
+    }
+    
+    next();
+  };
 };
 
 // 权限检查中间件
@@ -153,7 +242,8 @@ const ownerOrAdmin = (resourceField = 'user') => {
     }
     
     // 管理员可以访问所有资源
-    if (req.user.userType === 'admin') {
+    const adminTypes = ['system_admin', 'platform_manager'];
+    if (adminTypes.includes(req.user.userType)) {
       return next();
     }
     
@@ -215,6 +305,9 @@ module.exports = {
   authorize,
   adminOnly,
   superAdminOnly,
+  systemAdminOnly,
+  platformManagerOnly,
+  anyAdminType,
   checkPermission,
   pinOnly,
   csrOnly,

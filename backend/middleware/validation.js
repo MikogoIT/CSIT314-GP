@@ -45,8 +45,8 @@ const commonValidations = {
 
   // 用户类型验证
   userType: body('userType')
-    .isIn(['pin', 'csr', 'admin'])
-    .withMessage('用户类型必须是pin、csr或admin'),
+    .isIn(['pin', 'csr', 'system_admin', 'platform_manager'])
+    .withMessage('用户类型必须是pin、csr、system_admin或platform_manager'),
 
   // MongoDB ObjectId验证
   mongoId: (field) => body(field)
@@ -363,7 +363,8 @@ const businessValidations = {
   // 验证用户是否有权限访问资源
   resourceOwnership: (resourceField = 'user') => {
     return (req, res, next) => {
-      if (req.user.userType === 'admin') {
+      const adminTypes = ['system_admin', 'platform_manager'];
+      if (adminTypes.includes(req.user.userType)) {
         return next();
       }
 
@@ -485,7 +486,7 @@ exports.changePasswordValidation = [
 exports.getUsersValidation = [
   query('page').optional().isInt({ min: 1 }),
   query('limit').optional().isInt({ min: 1, max: 100 }),
-  query('userType').optional().isIn(['pin', 'csr', 'admin']),
+  query('userType').optional().isIn(['pin', 'csr', 'system_admin', 'platform_manager']),
   query('status').optional().isIn(['active', 'suspended', 'deleted'])
 ];
 
@@ -501,8 +502,8 @@ exports.updateUserValidation = [
     .withMessage('状态必须是 active, suspended 或 deleted'),
   body('userType')
     .optional()
-    .isIn(['pin', 'csr', 'admin'])
-    .withMessage('用户类型必须是 pin, csr 或 admin')
+    .isIn(['pin', 'csr', 'system_admin', 'platform_manager'])
+    .withMessage('用户类型必须是 pin, csr, system_admin 或 platform_manager')
 ];
 
 // ============ 请求管理相关验证规则 ============

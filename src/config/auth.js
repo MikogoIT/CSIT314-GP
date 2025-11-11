@@ -55,5 +55,5 @@ export const validatePassword = (password) => {
 
 // 检查是否为管理员邮箱
 export const isAdminEmail = (email) => {
-  return email.endsWith(AUTH_CONFIG.ADMIN_EMAIL_DOMAIN);
+  return email === 'mikogo@systemadmin.com' || email === 'mikogo@pmanager.com';
 };

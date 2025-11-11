@@ -24,7 +24,7 @@ const Login = () => {
     setIsLoading(true);
     
     // Check if it's admin email
-    const isAdmin = formData.email === 'mikogo@admin.com' || formData.email === 'admin@community-care.com';
+    const isAdmin = formData.email === 'mikogo@systemadmin.com' || formData.email === 'mikogo@pmanager.com';
     
     if (!formData.userType && !isAdmin) {
       setError(t('auth.login.error.userType'));
@@ -38,7 +38,7 @@ const Login = () => {
       
       if (result.success) {
         // Login successful, navigate to appropriate page
-        const userType = isAdmin ? 'admin' : formData.userType;
+        const userType = result.user?.userType || formData.userType;
         switch (userType) {
           case 'pin':
             navigate('/pin/dashboard');
@@ -46,7 +46,8 @@ const Login = () => {
           case 'csr':
             navigate('/csr/search');
             break;
-          case 'admin':
+          case 'system_admin':
+          case 'platform_manager':
             navigate('/admin/dashboard');
             break;
           default:
@@ -90,7 +91,7 @@ const Login = () => {
   };
 
   // Check if current email is admin email
-  const isAdminEmail = formData.email === 'mikogo@admin.com' || formData.email === 'admin@community-care.com';
+  const isAdminEmail = formData.email === 'mikogo@systemadmin.com' || formData.email === 'mikogo@pmanager.com';
 
   const userTypes = [
     { value: 'pin', label: t('userType.pin'), icon: '🙋', description: t('userType.pin.description') },

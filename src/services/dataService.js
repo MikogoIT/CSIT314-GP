@@ -150,7 +150,7 @@ export class DataService {
       const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
       let requests = [];
       
-      if (currentUser.userType === 'admin') {
+      if (currentUser.userType === 'system_admin' || currentUser.userType === 'platform_manager') {
         // 管理员使用getAllRequests获取所有请求
         const allRequests = await apiService.getAllRequests();
         requests = allRequests || [];

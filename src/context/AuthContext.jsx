@@ -38,19 +38,11 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       
-      // 检查是否是管理员邮箱
-      const isAdmin = isAdminEmail(email);
-      let finalUserType = userType;
-      
-      if (isAdmin) {
-        finalUserType = 'admin';
-      }
-      
       // 使用后端API登录
       const response = await apiService.login({
         email,
         password,
-        userType: finalUserType
+        userType: userType
       });
       
       if (response.data && response.data.user && response.data.token) {
@@ -88,7 +80,7 @@ export const AuthProvider = ({ children }) => {
         }
         localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
         
-        return { success: true };
+        return { success: true, user: userData };
       } else {
         return { success: false, errorCode: 'INVALID_CREDENTIALS' };
       }

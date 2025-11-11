@@ -29,8 +29,8 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, '用户类型是必填项'],
     enum: {
-      values: ['pin', 'csr', 'admin'],
-      message: '用户类型必须是 pin, csr 或 admin'
+      values: ['pin', 'csr', 'system_admin', 'platform_manager'],
+      message: '用户类型必须是 pin, csr, system_admin 或 platform_manager'
     }
   },
   

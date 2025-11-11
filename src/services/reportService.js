@@ -246,7 +246,8 @@ export class ReportService {
     return {
       pin: users.filter(u => u.userType === 'pin').length,
       csr: users.filter(u => u.userType === 'csr').length,
-      admin: users.filter(u => u.userType === 'admin').length
+      system_admin: users.filter(u => u.userType === 'system_admin').length,
+      platform_manager: users.filter(u => u.userType === 'platform_manager').length
     };
   }
   

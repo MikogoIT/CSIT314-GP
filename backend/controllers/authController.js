@@ -19,8 +19,11 @@ exports.register = asyncHandler(async (req, res) => {
     throw createError.conflict('该邮箱已被注册', 'EMAIL_ALREADY_EXISTS');
   }
 
+  // 管理员类型列表
+  const adminTypes = ['system_admin', 'platform_manager'];
+  
   // 检查是否为管理员邮箱
-  if (isAdminEmail(email) && userType !== 'admin') {
+  if (isAdminEmail(email) && !adminTypes.includes(userType)) {
     throw createError.badRequest('管理员邮箱只能注册管理员账户', 'ADMIN_EMAIL_INVALID_TYPE');
   }
 
@@ -29,7 +32,7 @@ exports.register = asyncHandler(async (req, res) => {
     name,
     email,
     password,
-    userType: isAdminEmail(email) ? 'admin' : userType,
+    userType: isAdminEmail(email) && adminTypes.includes(userType) ? userType : userType,
     phone,
     address
   };
@@ -96,8 +99,12 @@ exports.login = asyncHandler(async (req, res) => {
     throw createError.unauthorized('邮箱或密码错误', 'INVALID_CREDENTIALS');
   }
 
-  // 对于非管理员用户，验证用户类型
-  if (user.userType !== 'admin' && userType && user.userType !== userType) {
+  // 管理员类型列表
+  const adminTypes = ['system_admin', 'platform_manager'];
+  
+  // 对于非管理员用户，验证用户类型（如果前端提供了userType）
+  // 管理员不需要匹配userType，因为他们的userType就是具体的管理员类型
+  if (!adminTypes.includes(user.userType) && userType && user.userType !== userType) {
     throw createError.unauthorized('用户类型不匹配', 'USER_TYPE_MISMATCH');
   }
 

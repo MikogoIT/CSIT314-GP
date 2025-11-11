@@ -21,6 +21,9 @@ const AdminDashboard = () => {
     // 加载仪表板数据
     const loadDashboardData = async () => {
       try {
+        // 清空缓存，确保获取最新数据
+        DataService.clearCache();
+        
         // 初始化示例数据
         await DataService.initializeData();
         

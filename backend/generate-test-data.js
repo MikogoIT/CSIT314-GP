@@ -122,14 +122,17 @@ const generateUsers = async (count) => {
   const users = [];
   
   // Calculate user counts per type
-  const adminCount = 1; // Only 1 admin
+  const systemAdminCount = 1; // 1 System Admin
+  const platformManagerCount = 1; // 1 Platform Manager
+  const adminCount = systemAdminCount + platformManagerCount; // Total 2 admins
   const remainingCount = count - adminCount;
   const pinCount = Math.floor(remainingCount * 0.4); // 40% PIN users
   const csrCount = remainingCount - pinCount; // Rest are CSR users
   
-  console.log(`  Distribution: ${adminCount} admin, ${pinCount} PIN users, ${csrCount} CSR users`);
+  console.log(`  Distribution: ${systemAdminCount} system_admin, ${platformManagerCount} platform_manager, ${pinCount} PIN users, ${csrCount} CSR users`);
   
-  let adminCreated = 0;
+  let systemAdminCreated = 0;
+  let platformManagerCreated = 0;
   let pinCreated = 0;
   let csrCreated = 0;
   
@@ -137,9 +140,12 @@ const generateUsers = async (count) => {
     let userType;
     
     // Determine user type
-    if (adminCreated < adminCount) {
-      userType = 'admin';
-      adminCreated++;
+    if (systemAdminCreated < systemAdminCount) {
+      userType = 'system_admin';
+      systemAdminCreated++;
+    } else if (platformManagerCreated < platformManagerCount) {
+      userType = 'platform_manager';
+      platformManagerCreated++;
     } else if (pinCreated < pinCount) {
       userType = 'pin';
       pinCreated++;
@@ -152,10 +158,14 @@ const generateUsers = async (count) => {
     
     let name, email, password;
     
-    // Create fixed admin account
-    if (userType === 'admin') {
+    // Create fixed admin accounts
+    if (userType === 'system_admin') {
       name = 'System Administrator';
-      email = 'mikogo@admin.com';
+      email = 'mikogo@systemadmin.com';
+      password = await bcrypt.hash('msl201215', 12);
+    } else if (userType === 'platform_manager') {
+      name = 'Platform Manager';
+      email = 'mikogo@pmanager.com';
       password = await bcrypt.hash('msl201215', 12);
     } else {
       if (isChineseName) {
@@ -167,6 +177,8 @@ const generateUsers = async (count) => {
       password = await bcrypt.hash('password123', 12);
     }
     
+    const isAdminType = userType === 'system_admin' || userType === 'platform_manager';
+    
     const userData = {
       name,
       email,
@@ -175,9 +187,9 @@ const generateUsers = async (count) => {
       phone: `1${getRandomNumber(300000000, 999999999)}`,
       address: getRandomElement(addresses) + `${getRandomNumber(1, 999)}号`,
       profilePicture: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
-      status: userType === 'admin' ? 'active' : getRandomElement(['active', 'active', 'active', 'suspended']),
-      isEmailVerified: userType === 'admin' ? true : Math.random() > 0.2,
-      language: userType === 'admin' ? 'zh' : (Math.random() > 0.3 ? 'zh' : 'en'),
+      status: isAdminType ? 'active' : getRandomElement(['active', 'active', 'active', 'suspended']),
+      isEmailVerified: isAdminType ? true : Math.random() > 0.2,
+      language: isAdminType ? 'zh' : (Math.random() > 0.3 ? 'zh' : 'en'),
     };
 
     // 根据用户类型添加特定字段
@@ -244,15 +256,16 @@ const generateUsers = async (count) => {
         average: (Math.random() * 2 + 3).toFixed(1), // 3.0 - 5.0
         count: getRandomNumber(0, 50)
       };
-    } else if (userType === 'admin') {
-      userData.adminInfo = {
-        role: 'super_admin', // 唯一管理员拥有最高权限
-        permissions: ['user_management', 'content_management', 'system_settings', 'data_management'],
-        lastLogin: new Date(), // 最近登录
-        loginCount: getRandomNumber(100, 1000),
-        createdAt: new Date(2024, 0, 1), // 系统创建时就存在
-        description: '系统超级管理员，负责整个平台的管理和维护'
-      };
+    } else if (userType === 'system_admin') {
+      // System Admin specific settings
+      userData.isSuper = false; // Can be set to true for super admin
+      userData.createdAt = new Date(2024, 0, 1); // Admin exists from system start
+      userData.description = '系统管理员，负责技术保障与系统维护';
+    } else if (userType === 'platform_manager') {
+      // Platform Manager specific settings
+      userData.isSuper = false;
+      userData.createdAt = new Date(2024, 0, 1); // Admin exists from system start
+      userData.description = '平台管理者，负责业务运营与战略分析';
     }
 
     users.push(userData);
@@ -261,7 +274,8 @@ const generateUsers = async (count) => {
   try {
     await User.insertMany(users);
     console.log(`✅ Successfully created ${count} users`);
-    console.log(`   Admin account: mikogo@admin.com / msl201215`);
+    console.log(`   System Admin: mikogo@systemadmin.com / msl201215`);
+    console.log(`   Platform Manager: mikogo@pmanager.com / msl201215`);
     return await User.find({}).limit(count);
   } catch (error) {
     console.error('❌ Failed to create users:', error);
@@ -575,10 +589,15 @@ const generateTestData = async () => {
     console.log(`👥 Users: ${users.length}`);
     console.log(`  - PIN users: ${users.filter(u => u.userType === 'pin').length}`);
     console.log(`  - CSR users: ${users.filter(u => u.userType === 'csr').length}`);
-    console.log(`  - Admins: ${users.filter(u => u.userType === 'admin').length}`);
-    console.log(`\n🔐 Admin Account:`);
-    console.log(`  Email: mikogo@admin.com`);
-    console.log(`  Password: msl201215`);
+    console.log(`  - System Admins: ${users.filter(u => u.userType === 'system_admin').length}`);
+    console.log(`  - Platform Managers: ${users.filter(u => u.userType === 'platform_manager').length}`);
+    console.log(`\n🔐 Admin Accounts:`);
+    console.log(`  System Admin:`);
+    console.log(`    Email: mikogo@systemadmin.com`);
+    console.log(`    Password: msl201215`);
+    console.log(`  Platform Manager:`);
+    console.log(`    Email: mikogo@pmanager.com`);
+    console.log(`    Password: msl201215`);
     console.log(`\n📂 Categories: ${categories.length}`);
     console.log(`📋 Requests: ${requests.length}`);
     console.log(`  - Pending: ${requests.filter(r => r.status === 'pending').length}`);
@@ -588,7 +607,8 @@ const generateTestData = async () => {
     console.log(`⭐ Shortlists: ${shortlists.length}`);
     
     console.log('\n🎉 Test data generation completed successfully!');
-    console.log('\n💡 Login with: mikogo@admin.com / msl201215');
+    console.log('\n💡 System Admin Login: mikogo@systemadmin.com / msl201215');
+    console.log('💡 Platform Manager Login: mikogo@pmanager.com / msl201215');
     
   } catch (error) {
     console.error('❌ Test data generation failed:', error);
