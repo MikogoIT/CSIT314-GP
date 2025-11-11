@@ -1,0 +1,201 @@
+/* 语言切换器样式 */
+.language-switcher {
+  position: relative;
+  display: inline-block;
+}
+
+.language-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  font-size: 0.875rem;
+  min-width: 120px;
+  font-family: var(--font-family-sans);
+}
+
+.language-toggle:hover {
+  background: var(--bg-secondary);
+  border-color: var(--primary-color);
+}
+
+.language-toggle:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.language-flag {
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+.language-name {
+  flex: 1;
+  text-align: left;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.language-arrow {
+  font-size: 0.75em;
+  color: var(--text-muted);
+  transition: transform var(--transition-normal);
+}
+
+.language-switcher[data-open="true"] .language-arrow {
+  transform: rotate(180deg);
+}
+
+.language-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.25rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  overflow: hidden;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.language-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color var(--transition-normal);
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.language-option:hover {
+  background: var(--bg-secondary);
+}
+
+.language-option.active {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+.language-option .language-name {
+  flex: 1;
+}
+
+.language-check {
+  color: var(--primary-color);
+  font-weight: bold;
+  font-size: 0.9em;
+}
+
+.language-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+}
+
+/* 导航栏中的语言切换器 */
+.navbar .language-switcher {
+  margin-left: 1rem;
+}
+
+.navbar .language-toggle {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  min-width: 100px;
+}
+
+.navbar .language-toggle:hover {
+  background: var(--bg-secondary);
+  border-color: var(--primary-color);
+}
+
+.navbar .language-name {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.navbar .language-dropdown {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+}
+
+.navbar .language-option {
+  color: var(--text-primary);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .language-toggle {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+    min-width: 80px;
+  }
+  
+  .language-name {
+    display: none;
+  }
+  
+  .language-flag {
+    font-size: 1.2em;
+  }
+  
+  .navbar .language-switcher {
+    margin-left: 0.5rem;
+  }
+}
+
+@media (min-width: 769px) {
+  .language-name {
+    display: block !important;
+  }
+}
+
+/* 深色主题支持 */
+@media (prefers-color-scheme: dark) {
+  .language-toggle {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+  }
+  
+  .language-dropdown {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  }
+  
+  .language-option:hover {
+    background: var(--bg-muted);
+  }
+}

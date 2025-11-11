@@ -1,0 +1,570 @@
+/* 表单组件样式 */
+
+/* 表单容器 */
+.form {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.form-section {
+  background: var(--bg-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-lg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 在模态框中的表单section */
+.modal .form-section {
+  position: relative;
+  z-index: 1;
+}
+
+.form-section-title {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 2px solid var(--border-color);
+}
+
+/* 表单网格 */
+.form-grid {
+  display: grid;
+  gap: var(--spacing-lg);
+  position: relative;
+}
+
+.form-grid.cols-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.form-grid.cols-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+/* 为多个表单网格添加间距 */
+.form-grid + .form-grid {
+  margin-top: var(--spacing-xl);
+}
+
+/* 在模态框中的表单网格需要特殊处理 */
+.modal .form-grid {
+  overflow: visible;
+}
+
+/* 表单组 */
+.form-group {
+  position: relative;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+/* 标签样式 */
+.form-label {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+  cursor: pointer;
+}
+
+.form-label.required::after {
+  content: ' *';
+  color: var(--error-color);
+  font-weight: 500;
+}
+
+.form-label-optional {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-style: italic;
+}
+
+/* 输入框基础样式 */
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-base);
+  font-family: inherit;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: all var(--transition-normal);
+  box-sizing: border-box;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+  background-color: var(--bg-primary);
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* 特殊输入框样式 */
+.form-input.large {
+  padding: var(--spacing-lg) var(--spacing-md);
+  font-size: var(--text-lg);
+}
+
+.form-input.small {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--text-sm);
+}
+
+/* 选择框样式 */
+.form-select {
+  cursor: pointer;
+  /* 隐藏默认箭头 - 所有浏览器 */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  /* 添加自定义箭头 */
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 20px;
+  padding-right: 44px;
+  position: relative;
+  z-index: 1;
+  /* 确保背景设置正确 */
+  background-color: var(--bg-primary);
+  border: 2px solid var(--border-color);
+}
+
+.form-select:focus {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  z-index: 2;
+}
+
+/* 兼容不同浏览器的箭头隐藏 */
+.form-select::-ms-expand {
+  display: none; /* 隐藏IE/Edge的默认箭头 */
+}
+
+/* Firefox特殊处理 */
+.form-select {
+  text-indent: 0.01px;
+  text-overflow: '';
+}
+
+/* 确保下拉选项不被模态框边界裁剪 */
+.form-select option {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+/* 模态框中的选择框特殊处理 */
+.modal .form-select {
+  position: relative;
+  z-index: 10;
+}
+
+.modal .form-select:focus,
+.modal .form-select:active {
+  z-index: 1060; /* 高于模态框的z-index */
+}
+
+/* 确保模态框内容区域允许溢出 */
+.modal .form-group {
+  position: relative;
+  z-index: 1;
+}
+
+.modal .form-section {
+  position: relative;
+  overflow: visible;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: var(--spacing-lg) 0;
+  margin-bottom: var(--spacing-xl);
+}
+
+.modal .form-section:last-child {
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-xl);
+}
+
+/* 多选下拉框 */
+.multi-select {
+  position: relative;
+}
+
+.multi-select-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+}
+
+.multi-select-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  background: var(--primary-light);
+  color: var(--primary-color);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.multi-select-tag-remove {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  padding: 0;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 文本域 */
+.form-textarea {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.5;
+}
+
+.form-textarea.auto-resize {
+  resize: none;
+}
+
+/* 复选框和单选框 */
+.form-checkbox,
+.form-radio {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+}
+
+.form-checkbox input,
+.form-radio input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--primary-color);
+}
+
+.form-checkbox-group,
+.form-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.form-checkbox-group.horizontal,
+.form-radio-group.horizontal {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--spacing-lg);
+}
+
+/* 开关按钮 */
+.form-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+}
+
+.form-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.form-switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--gray-300);
+  transition: var(--transition-normal);
+  border-radius: 24px;
+}
+
+.form-switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: var(--transition-normal);
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
+}
+
+.form-switch input:checked + .form-switch-slider {
+  background-color: var(--primary-color);
+}
+
+.form-switch input:checked + .form-switch-slider:before {
+  transform: translateX(24px);
+}
+
+/* 文件上传 */
+.form-file {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.form-file input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.form-file-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--bg-muted);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  text-align: center;
+  min-height: 120px;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.form-file-label:hover {
+  border-color: var(--primary-color);
+  background: var(--primary-light);
+  color: var(--primary-color);
+}
+
+.form-file.has-file .form-file-label {
+  border-color: var(--success-color);
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success-color);
+}
+
+.form-file-icon {
+  font-size: var(--text-2xl);
+  margin-bottom: var(--spacing-sm);
+}
+
+.form-file-text {
+  font-weight: 500;
+}
+
+.form-file-subtext {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin-top: var(--spacing-xs);
+}
+
+/* 日期选择器 */
+.form-date-range {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+.form-date-separator {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* 错误和验证状态 */
+.form-group.error .form-input,
+.form-group.error .form-select,
+.form-group.error .form-textarea {
+  border-color: var(--error-color);
+  background-color: rgba(239, 68, 68, 0.05);
+}
+
+.form-group.error .form-input:focus,
+.form-group.error .form-select:focus,
+.form-group.error .form-textarea:focus {
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+}
+
+.form-group.success .form-input,
+.form-group.success .form-select,
+.form-group.success .form-textarea {
+  border-color: var(--success-color);
+  background-color: rgba(16, 185, 129, 0.05);
+}
+
+.form-error {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--error-color);
+  font-size: var(--text-sm);
+  margin-top: var(--spacing-xs);
+}
+
+.form-help {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  margin-top: var(--spacing-xs);
+}
+
+/* 表单操作按钮 */
+.form-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+  margin-top: var(--spacing-2xl);
+  padding-top: var(--spacing-xl);
+  border-top: 1px solid var(--border-color);
+}
+
+.form-actions.centered {
+  justify-content: center;
+}
+
+.form-actions.full-width {
+  flex-direction: column;
+}
+
+.form-actions.full-width .btn {
+  width: 100%;
+}
+
+/* 搜索表单 */
+.search-form {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+}
+
+.search-input {
+  flex: 1;
+  position: relative;
+}
+
+.search-input .form-input {
+  padding-left: 44px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: var(--text-lg);
+}
+
+/* 过滤器表单 */
+.filter-form {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.filter-form .form-grid {
+  gap: var(--spacing-md);
+}
+
+.filter-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+  margin-top: var(--spacing-lg);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .form-grid.cols-2,
+  .form-grid.cols-3 {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .form-actions .btn {
+    width: 100%;
+  }
+  
+  .form-checkbox-group.horizontal,
+  .form-radio-group.horizontal {
+    flex-direction: column;
+  }
+  
+  .search-form {
+    flex-direction: column;
+  }
+  
+  .filter-actions {
+    justify-content: stretch;
+  }
+  
+  .filter-actions .btn {
+    flex: 1;
+  }
+  
+  /* 移动设备上的模态框调整 */
+  .modal.form-modal {
+    max-width: 95vw;
+    margin: var(--spacing-sm);
+  }
+  
+  .modal.form-modal .modal-body {
+    padding: var(--spacing-md);
+  }
+  
+  .modal.form-modal .form-section {
+    padding: var(--spacing-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .form-section {
+    padding: var(--spacing-lg);
+  }
+  
+  .form-file-label {
+    min-height: 100px;
+  }
+  
+  .form-date-range {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+  
+  .form-date-separator {
+    text-align: center;
+  }
+}

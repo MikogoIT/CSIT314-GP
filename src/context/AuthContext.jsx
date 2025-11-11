@@ -1,0 +1,226 @@
+// src/context/AuthContext.jsx
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { AUTH_CONFIG, isAdminEmail } from '../config/auth';
+import apiService from '../services/apiService';
+
+const AuthContext = createContext();
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    // 检查本地存储中是否有用户信息
+    const savedUser = localStorage.getItem('user');
+    const savedToken = localStorage.getItem('token');
+    
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
+    
+    if (savedToken) {
+      // 设置apiService的认证token
+      apiService.setToken(savedToken);
+    }
+    
+    setLoading(false);
+  }, []);
+  
+  const login = async (email, password, userType) => {
+    try {
+      setLoading(true);
+      
+      // 检查是否是管理员邮箱
+      const isAdmin = isAdminEmail(email);
+      let finalUserType = userType;
+      
+      if (isAdmin) {
+        finalUserType = 'admin';
+      }
+      
+      // 使用后端API登录
+      const response = await apiService.login({
+        email,
+        password,
+        userType: finalUserType
+      });
+      
+      if (response.data && response.data.user && response.data.token) {
+        // 存储用户信息和token
+        const userData = {
+          id: response.data.user.id,
+          name: response.data.user.name,
+          email: response.data.user.email,
+          userType: response.data.user.userType,
+          phone: response.data.user.phone,
+          address: response.data.user.address,
+          organization: response.data.user.organization,
+          skills: response.data.user.skills,
+          status: response.data.user.status,
+          createdAt: response.data.user.createdAt,
+          lastLogin: response.data.user.lastLogin
+        };
+        
+        setUser(userData);
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('token', response.data.token);
+        
+        // 设置apiService的认证token
+        apiService.setToken(response.data.token);
+        
+        // 更新registeredUsers到localStorage供管理员查看
+        const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+        const existingUserIndex = registeredUsers.findIndex(u => u.id === userData.id);
+        if (existingUserIndex >= 0) {
+          // 更新现有用户信息，特别是lastLogin时间
+          registeredUsers[existingUserIndex] = { ...registeredUsers[existingUserIndex], ...userData };
+        } else {
+          // 如果用户不存在，添加到列表中
+          registeredUsers.push(userData);
+        }
+        localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+        
+        return { success: true };
+      } else {
+        return { success: false, errorCode: 'INVALID_CREDENTIALS' };
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      if (error.message.includes('Invalid credentials')) {
+        return { success: false, errorCode: 'INVALID_CREDENTIALS' };
+      }
+      if (error.message.includes('User not found')) {
+        return { success: false, errorCode: 'USER_NOT_EXISTS' };
+      }
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const register = async (formData) => {
+    try {
+      setLoading(true);
+      
+      // 使用后端API注册用户
+      const response = await apiService.register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        userType: formData.userType,
+        phone: formData.phone,
+        address: formData.address,
+        organization: formData.organization,
+        skills: formData.skills,
+        birthDate: formData.birthDate,
+        emergencyContact: formData.emergencyContact
+      });
+      
+      // 注册成功后自动登录
+      if (response.data && response.data.user && response.data.token) {
+        // 存储用户信息和token
+        const userData = {
+          id: response.data.user.id,
+          name: response.data.user.name,
+          email: response.data.user.email,
+          userType: response.data.user.userType,
+          phone: response.data.user.phone,
+          address: response.data.user.address,
+          organization: response.data.user.organization,
+          skills: response.data.user.skills,
+          status: response.data.user.status,
+          createdAt: response.data.user.createdAt
+        };
+        
+        setUser(userData);
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('token', response.data.token);
+        
+        // 设置apiService的认证token
+        apiService.setToken(response.data.token);
+        
+        // 更新registeredUsers到localStorage供管理员查看
+        const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+        const existingUserIndex = registeredUsers.findIndex(u => u.id === userData.id);
+        if (existingUserIndex === -1) {
+          registeredUsers.push(userData);
+          localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+        }
+        
+        return { success: true };
+      } else {
+        return { success: false, error: 'Registration failed' };
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      if (error.message.includes('User already exists')) {
+        return { success: false, errorCode: 'EMAIL_ALREADY_EXISTS' };
+      }
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const updateProfile = async (profileData) => {
+    try {
+      setLoading(true);
+      
+      // 这里可以调用后端API更新用户资料
+      // const response = await apiService.updateProfile(profileData);
+      
+      // 目前使用本地存储模拟
+      const updatedUser = {
+        ...user,
+        ...profileData,
+        updatedAt: new Date().toISOString()
+      };
+      
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      
+      // 同时更新registeredUsers中的用户信息
+      const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+      const userIndex = registeredUsers.findIndex(u => u.id === user.id);
+      if (userIndex >= 0) {
+        registeredUsers[userIndex] = updatedUser;
+        localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Profile update error:', error);
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await apiService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+    setUser(null);
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    
+    // 清除apiService的认证token
+    apiService.setToken(null);
+  };
+  
+  return (
+    <AuthContext.Provider value={{ user, login, register, logout, updateProfile, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
