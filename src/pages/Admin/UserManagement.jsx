@@ -1,10 +1,11 @@
-// 用户管理页面
+// 用户管理页面 - 仅 System Admin 可访问
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import Navbar from '../../components/Layout/Navbar';
 import apiService from '../../services/apiService';
+import { isSystemAdmin } from '../../utils/permissions';
 import '../../styles/user-management.css';
 
 const UserManagement = () => {
@@ -17,6 +18,14 @@ const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [showUserDetail, setShowUserDetail] = useState(false);
+
+  // 权限检查 - 只有 System Admin 可以访问
+  useEffect(() => {
+    if (!isSystemAdmin(user)) {
+      alert(t('permission.denied') || 'Access Denied: System Admin only');
+      navigate('/admin/dashboard');
+    }
+  }, [user, navigate, t]);
 
   // 格式化日期的辅助函数
   const formatDate = (dateString) => {

@@ -106,6 +106,17 @@ const requestSchema = new mongoose.Schema({
     trim: true,
     maxlength: [500, '额外说明不能超过500个字符']
   },
+
+  // 附件（例如医生证明、照片等）
+  attachments: [{
+    filename: String,
+    originalName: String,
+    path: String,
+    url: String,
+    mimetype: String,
+    size: Number,
+    uploadedAt: { type: Date, default: Date.now }
+  }],
   
   // 请求者信息
   requester: {

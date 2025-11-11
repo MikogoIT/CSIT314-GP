@@ -17,6 +17,8 @@ import AdminDashboard from './pages/Admin/Dashboard_new';
 import CategoryManagement from './pages/Admin/CategoryManagement';
 import Reports from './pages/Admin/Reports_new';
 import UserManagement from './pages/Admin/UserManagement';
+import SystemLogs from './pages/Admin/SystemLogs';
+import SystemAlerts from './pages/Admin/SystemAlerts';
 import Help from './pages/Common/Help';
 import Profile from './pages/Common/Profile';
 import PINHistory from './pages/PIN/History';
@@ -49,6 +51,8 @@ function App() {
             <Route path="/admin/categories" element={<CategoryManagement />} />
             <Route path="/admin/reports" element={<Reports />} />
             <Route path="/admin/users" element={<UserManagement />} />
+            <Route path="/admin/system-logs" element={<SystemLogs />} />
+            <Route path="/admin/alerts" element={<SystemAlerts />} />
             
             {/* 公共页面 */}
             <Route path="/help" element={<Help />} />

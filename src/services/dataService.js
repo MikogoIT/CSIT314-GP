@@ -497,7 +497,13 @@ export class DataService {
   // 创建新请求
   static async createRequest(requestData) {
     try {
-      const newRequest = await apiService.createRequest(requestData);
+      let newRequest;
+      // If attachments (File objects) exist, use multipart upload
+      if (requestData.attachments && requestData.attachments.length) {
+        newRequest = await apiService.createRequestWithFiles(requestData);
+      } else {
+        newRequest = await apiService.createRequest(requestData);
+      }
       this.clearCache('requests');
       
       return {

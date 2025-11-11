@@ -1,13 +1,24 @@
-// Reports.jsx
+// Reports.jsx - 仅 Platform Manager 可访问
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { ReportService } from '../../services/reportService';
 import { useLanguage } from '../../context/LanguageContext';
+import { isPlatformManager } from '../../utils/permissions';
 import '../../styles/reports.css';
 
 const Reports = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { currentLanguage, t } = useLanguage();
+
+  // 权限检查 - 只有 Platform Manager 可以访问
+  useEffect(() => {
+    if (!isPlatformManager(user)) {
+      alert(t('permission.denied') || 'Access Denied: Platform Manager only');
+      navigate('/admin/dashboard');
+    }
+  }, [user, navigate, t]);
 
   const handleGoBack = () => {
     navigate(-1); // 返回上一页

@@ -1,13 +1,16 @@
-// CategoryManagement.jsx
+// CategoryManagement.jsx - 仅 Platform Manager 可访问
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { DataService } from '../../services/dataService';
 import apiService from '../../services/apiService';
+import { isPlatformManager } from '../../utils/permissions';
 import '../../styles/category-management.css';
 
 const CategoryManagement = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { t, currentLanguage } = useLanguage();
   const [categories, setCategories] = useState([]);
   const [newCategory, setNewCategory] = useState('');
@@ -18,6 +21,14 @@ const CategoryManagement = () => {
   const [showRequestDetail, setShowRequestDetail] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingRequest, setEditingRequest] = useState(null);
+
+  // 权限检查 - 只有 Platform Manager 可以访问
+  useEffect(() => {
+    if (!isPlatformManager(user)) {
+      alert(t('permission.denied') || 'Access Denied: Platform Manager only');
+      navigate('/admin/dashboard');
+    }
+  }, [user, navigate, t]);
 
   // 获取分类显示名称
   const getCategoryDisplayName = (category) => {

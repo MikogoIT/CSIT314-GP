@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { DataService } from '../../services/dataService';
 import Navbar from '../../components/Layout/Navbar';
+import { isSystemAdmin, isPlatformManager } from '../../utils/permissions';
 import '../../styles/modern-dashboard.css';
 
 const AdminDashboard = () => {
@@ -57,14 +58,16 @@ const AdminDashboard = () => {
         
         const pendingRequests = (requests || []).filter(r => r.status === 'pending');
         
-        const stats = [
+        // 根据管理员类型生成统计卡片
+        const allStats = [
           { 
             title: t('admin.dashboard.totalUsers'), 
             value: (users || []).length.toString(), 
             change: `+${thisMonthUsers.length}`, 
             trend: thisMonthUsers.length > 0 ? 'up' : 'neutral', 
             icon: '👥', 
-            color: 'primary' 
+            color: 'primary',
+            permission: 'system_admin' // 只有 System Admin 可见
           },
           { 
             title: t('admin.dashboard.activeRequests'), 
@@ -72,7 +75,8 @@ const AdminDashboard = () => {
             change: `+${thisMonthRequests.length}`, 
             trend: thisMonthRequests.length > 0 ? 'up' : 'neutral', 
             icon: '📋', 
-            color: 'secondary' 
+            color: 'secondary',
+            permission: 'both' // 两种管理员都可见
           },
           { 
             title: t('admin.dashboard.todayMatches'), 
@@ -80,7 +84,8 @@ const AdminDashboard = () => {
             change: `+${todayMatched.length}`, 
             trend: todayMatched.length > 0 ? 'up' : 'neutral', 
             icon: '✅', 
-            color: 'success' 
+            color: 'success',
+            permission: 'platform_manager' // 只有 Platform Manager 可见
           },
           { 
             title: t('admin.dashboard.pendingReview'), 
@@ -88,48 +93,61 @@ const AdminDashboard = () => {
             change: `${pendingRequests.length > 5 ? '+' : ''}${pendingRequests.length}`, 
             trend: pendingRequests.length > 5 ? 'up' : pendingRequests.length > 0 ? 'neutral' : 'down', 
             icon: '⏳', 
-            color: 'warning' 
+            color: 'warning',
+            permission: 'both' // 两种管理员都可见
           }
         ];
         
-        // 最近活动
+        // 根据用户权限过滤统计卡片
+        const stats = allStats.filter(stat => {
+          if (stat.permission === 'both') return true;
+          if (stat.permission === 'system_admin') return isSystemAdmin(user);
+          if (stat.permission === 'platform_manager') return isPlatformManager(user);
+          return false;
+        });
+        
+        // 最近活动 - 根据管理员类型显示不同内容
         const activities = [];
         
-        // 最近的新用户
-        const recentUsers = (users || [])
-          .sort((a, b) => new Date(b.registeredAt || b.createdAt || 0) - new Date(a.registeredAt || a.createdAt || 0))
-          .slice(0, 3);
-        
-        recentUsers.forEach(user => {
-          activities.push({
-            icon: '👤',
-            content: `${t('common.newUser')} - ${user.name}`,
-            time: DataService.getTimeAgo(user.registeredAt || user.createdAt, t)
-          });
-        });
-        
-        // 最近的请求
-        const recentRequests = requests
-          .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-          .slice(0, 2);
-        
-        // 获取所有分类以便后续查找
-        const allCategories = await DataService.getCategories();
-        
-        recentRequests.forEach(request => {
-          const icon = request.status === 'matched' ? '✅' : '📋';
-          const category = (allCategories || []).find(cat => cat.id === request.category);
-          const categoryName = category ? t(category.name) : request.category;
-          const content = request.status === 'matched' 
-            ? `${categoryName}${t('common.requestMatched')}`
-            : `${t('common.newRequest')} - ${categoryName}`;
+        // System Admin 显示新用户活动
+        if (isSystemAdmin(user)) {
+          const recentUsers = (users || [])
+            .sort((a, b) => new Date(b.registeredAt || b.createdAt || 0) - new Date(a.registeredAt || a.createdAt || 0))
+            .slice(0, 3);
           
-          activities.push({
-            icon,
-            content,
-            time: DataService.getTimeAgo(request.createdAt, t)
+          recentUsers.forEach(user => {
+            activities.push({
+              icon: '👤',
+              content: `${t('common.newUser')} - ${user.name}`,
+              time: DataService.getTimeAgo(user.registeredAt || user.createdAt, t)
+            });
           });
-        });
+        }
+        
+        // Platform Manager 显示请求和匹配活动
+        if (isPlatformManager(user)) {
+          const recentRequests = requests
+            .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+            .slice(0, 5);
+          
+          // 获取所有分类以便后续查找
+          const allCategories = await DataService.getCategories();
+          
+          recentRequests.forEach(request => {
+            const icon = request.status === 'matched' ? '✅' : '📋';
+            const category = (allCategories || []).find(cat => cat.id === request.category);
+            const categoryName = category ? t(category.name) : request.category;
+            const content = request.status === 'matched' 
+              ? `${categoryName}${t('common.requestMatched')}`
+              : `${t('common.newRequest')} - ${categoryName}`;
+            
+            activities.push({
+              icon,
+              content,
+              time: DataService.getTimeAgo(request.createdAt, t)
+            });
+          });
+        }
         
         setDashboardData({ stats, activities });
         setLastUpdated(new Date());
@@ -156,12 +174,30 @@ const AdminDashboard = () => {
     return () => clearInterval(interval);
   }, [t]);
 
-  const quickActions = [
-    { title: t('admin.dashboard.userManagement'), icon: '👥', path: '/admin/users', color: 'blue' },
-    { title: t('admin.dashboard.serviceCategories'), icon: '📁', path: '/admin/categories', color: 'green' },
-    { title: t('admin.dashboard.dataReports'), icon: '📊', path: '/admin/reports', color: 'purple' },
-    { title: t('admin.dashboard.systemSettings'), icon: '⚙️', path: '/admin/settings', color: 'gray' }
-  ];
+  // 快捷功能卡片 - 根据管理员类型显示不同的功能
+  const getQuickActions = () => {
+    if (isSystemAdmin(user)) {
+      // System Admin 专属功能
+      return [
+        { title: t('admin.dashboard.userManagement') || 'User Management', icon: '👥', path: '/admin/users', color: 'blue', description: 'Manage all users (#50)' },
+        { title: t('admin.dashboard.systemLogs') || 'System Logs', icon: '📋', path: '/admin/system-logs', color: 'orange', description: 'Monitor login activity (#51)' },
+        { title: t('admin.dashboard.systemSettings') || 'System Settings', icon: '⚙️', path: '/admin/settings', color: 'gray', description: 'Configure system (#56)' },
+        { title: t('admin.dashboard.alerts') || 'Alerts', icon: '🔔', path: '/admin/alerts', color: 'red', description: 'System alerts' }
+      ];
+    } else if (isPlatformManager(user)) {
+      // Platform Manager 专属功能
+      return [
+        { title: t('admin.dashboard.serviceCategories') || 'Service Categories', icon: '📁', path: '/admin/categories', color: 'green', description: 'Manage categories (#57)' },
+        { title: t('admin.dashboard.dataReports') || 'Reports', icon: '📊', path: '/admin/reports', color: 'purple', description: 'Generate reports (#58)' },
+        { title: t('admin.dashboard.participation') || 'Participation', icon: '📈', path: '/admin/participation', color: 'blue', description: 'Monitor engagement (#59)' },
+        { title: t('admin.dashboard.csrPerformance') || 'CSR Performance', icon: '⭐', path: '/admin/performance', color: 'yellow', description: 'Track CSR (#62)' }
+      ];
+    }
+    
+    return [];
+  };
+
+  const quickActions = getQuickActions();
 
   return (
     <div className="modern-admin-container">
@@ -227,45 +263,48 @@ const AdminDashboard = () => {
               </span>
             </button>
             
-            <button 
-              className="modern-action-btn export-btn"
-              onClick={async () => {
-                try {
-                  const statistics = await DataService.getStatistics();
-                  const users = await DataService.getUsers();
-                  const requests = await DataService.getRequests();
-                  
-                  const report = {
-                    title: 'System Report',
-                    generatedAt: new Date().toISOString(),
-                    statistics,
-                    summary: {
-                      totalUsers: (users || []).length,
-                      totalRequests: (requests || []).length,
-                      activeRequests: (requests || []).filter(r => r.status === 'pending' || r.status === 'matched').length,
-                      matchedRequests: (requests || []).filter(r => r.status === 'matched').length
-                    }
-                  };
-                  
-                  const dataStr = JSON.stringify(report, null, 2);
-                  const dataBlob = new Blob([dataStr], { type: 'application/json' });
-                  const link = document.createElement('a');
-                  link.href = URL.createObjectURL(dataBlob);
-                  link.download = `system_report_${new Date().toISOString().split('T')[0]}.json`;
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link);
-                  
-                  alert(t('admin.dashboard.reportGenerated') || '报告已生成');
-                } catch (error) {
-                  console.error('生成报告失败:', error);
-                  alert(t('admin.dashboard.reportError') || '生成报告失败');
-                }
-              }}
-            >
-              <span className="btn-icon">📊</span>
-              <span className="btn-text">{t('admin.dashboard.generateReport') || '生成报告'}</span>
-            </button>
+            {/* 导出报告按钮 - 只有 Platform Manager 可见 */}
+            {isPlatformManager(user) && (
+              <button 
+                className="modern-action-btn export-btn"
+                onClick={async () => {
+                  try {
+                    const statistics = await DataService.getStatistics();
+                    const users = await DataService.getUsers();
+                    const requests = await DataService.getRequests();
+                    
+                    const report = {
+                      title: 'System Report',
+                      generatedAt: new Date().toISOString(),
+                      statistics,
+                      summary: {
+                        totalUsers: (users || []).length,
+                        totalRequests: (requests || []).length,
+                        activeRequests: (requests || []).filter(r => r.status === 'pending' || r.status === 'matched').length,
+                        matchedRequests: (requests || []).filter(r => r.status === 'matched').length
+                      }
+                    };
+                    
+                    const dataStr = JSON.stringify(report, null, 2);
+                    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(dataBlob);
+                    link.download = `system_report_${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    alert(t('admin.dashboard.reportGenerated') || '报告已生成');
+                  } catch (error) {
+                    console.error('生成报告失败:', error);
+                    alert(t('admin.dashboard.reportError') || '生成报告失败');
+                  }
+                }}
+              >
+                <span className="btn-icon">📊</span>
+                <span className="btn-text">{t('admin.dashboard.exportReport') || '导出报告'}</span>
+              </button>
+            )}
           </div>
         </div>
 

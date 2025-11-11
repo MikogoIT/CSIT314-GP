@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import LanguageSwitcher from '../Common/LanguageSwitcher';
+import { isSystemAdmin, isPlatformManager } from '../../utils/permissions';
 
 const Navbar = ({ userType, user }) => {
   const { logout } = useAuth();
@@ -57,8 +58,24 @@ const Navbar = ({ userType, user }) => {
             {(userType === 'system_admin' || userType === 'platform_manager') && (
               <>
                 <li><Link to="/admin/dashboard" className="nav-link">{t('nav.admin.dashboard')}</Link></li>
-                <li><Link to="/admin/categories" className="nav-link">{t('nav.admin.categories')}</Link></li>
-                <li><Link to="/admin/reports" className="nav-link">{t('nav.admin.reports')}</Link></li>
+                
+                {/* System Admin 专属菜单 */}
+                {isSystemAdmin(user) && (
+                  <>
+                    <li><Link to="/admin/users" className="nav-link">{t('nav.admin.users') || 'User Management'}</Link></li>
+                    <li><Link to="/admin/system-logs" className="nav-link">{t('nav.admin.systemLogs') || 'System Logs'}</Link></li>
+                    <li><Link to="/admin/alerts" className="nav-link">{t('nav.admin.alerts') || 'Alerts'}</Link></li>
+                  </>
+                )}
+                
+                {/* Platform Manager 专属菜单 */}
+                {isPlatformManager(user) && (
+                  <>
+                    <li><Link to="/admin/categories" className="nav-link">{t('nav.admin.categories') || 'Categories'}</Link></li>
+                    <li><Link to="/admin/reports" className="nav-link">{t('nav.admin.reports') || 'Reports'}</Link></li>
+                    <li><Link to="/admin/performance" className="nav-link">{t('nav.admin.performance') || 'CSR Performance'}</Link></li>
+                  </>
+                )}
               </>
             )}
           </ul>

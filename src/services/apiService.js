@@ -193,6 +193,67 @@ class ApiService {
     return response.data;
   }
 
+  // Create request with file attachments (multipart/form-data)
+  async createRequestWithFiles(requestData) {
+    const url = `${API_BASE_URL}/requests`;
+    const token = this.token;
+
+    const formData = new FormData();
+
+    // helper to append nested fields using bracket notation (e.g. location[address]=...)
+    const appendFormField = (key, value) => {
+      if (value === undefined || value === null) return;
+      // Files (from browser File API) should be appended by caller
+      if (value instanceof File) {
+        formData.append(key, value);
+        return;
+      }
+      if (typeof value === 'object' && !Array.isArray(value)) {
+        // flatten object
+        Object.entries(value).forEach(([subKey, subValue]) => {
+          // for nested objects, stringify the inner object
+          if (typeof subValue === 'object' && subValue !== null) {
+            formData.append(`${key}[${subKey}]`, JSON.stringify(subValue));
+          } else {
+            formData.append(`${key}[${subKey}]`, subValue);
+          }
+        });
+      } else if (Array.isArray(value)) {
+        // append array items as key[]
+        value.forEach(item => formData.append(`${key}[]`, typeof item === 'object' ? JSON.stringify(item) : item));
+      } else {
+        formData.append(key, value);
+      }
+    };
+
+    // Append non-file fields
+    Object.entries(requestData).forEach(([key, value]) => {
+      if (key === 'attachments') return; // handle separately
+      appendFormField(key, value);
+    });
+
+    // Append files
+    if (requestData.attachments && requestData.attachments.length) {
+      for (const file of requestData.attachments) {
+        // file may be a File object (browser) or an array entry already; append directly
+        formData.append('attachments', file);
+      }
+    }
+
+    const headers = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || `HTTP error! status: ${response.status}`);
+    return data.data;
+  }
+
   async updateRequest(id, requestData) {
     const response = await this.put(`/requests/${id}`, requestData);
     return response.data;

@@ -6,8 +6,47 @@ const User = require('../models/User');
 const Shortlist = require('../models/Shortlist');
 const { asyncHandler, createError } = require('../middleware/errorHandler');
 const { authenticate, authorize, ownerOrAdmin } = require('../middleware/auth');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const router = express.Router();
+
+// Multer upload configuration
+const UPLOAD_DIR = process.env.UPLOAD_PATH || path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(UPLOAD_DIR)) {
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, UPLOAD_DIR);
+  },
+  filename: function (req, file, cb) {
+    // Use timestamp + original name to avoid collisions
+    const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+    cb(null, `${Date.now()}-${safeName}`);
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  // allow images and common document types (pdf, doc, docx)
+  const allowed = ['image/', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+  if (file.mimetype.startsWith('image/') || allowed.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(null, false);
+  }
+};
+
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: parseInt(process.env.MAX_UPLOAD_SIZE || '5242880'), // default 5MB
+    files: parseInt(process.env.MAX_UPLOAD_FILES || '5')
+  }
+});
 
 // 验证错误处理
 const handleValidationErrors = (req, res, next) => {
@@ -186,13 +225,86 @@ router.get('/:id', asyncHandler(async (req, res) => {
 // @access  Private (PIN users only)
 router.post('/', 
   authorize('pin'),
+  // accept file uploads named 'attachments' (max files controlled by multer config)
+  upload.array('attachments'),
+  // Parse multipart text fields: convert JSON strings and bracket/dot notation into nested objects
+  (req, res, next) => {
+    try {
+      // Convert keys like 'a[b]' or 'a.b' into nested objects on req.body
+      const setNested = (obj, path, value) => {
+        if (!path) return;
+        // support bracket notation a[b][c]
+        const parts = [];
+        path.replace(/\[(.*?)\]|([^\[.]+)/g, (_, bracket, dot) => {
+          parts.push(bracket === undefined ? dot : bracket);
+          return '';
+        });
+        let cur = obj;
+        for (let i = 0; i < parts.length; i++) {
+          const p = parts[i];
+          if (i === parts.length - 1) {
+            cur[p] = value;
+          } else {
+            if (cur[p] === undefined || typeof cur[p] !== 'object') cur[p] = {};
+            cur = cur[p];
+          }
+        }
+      };
+
+      // Iterate over req.body keys and parse JSON-like strings
+      Object.keys(req.body || {}).forEach(key => {
+        let val = req.body[key];
+        // Try parse JSON strings
+        if (typeof val === 'string') {
+          const trimmed = val.trim();
+          if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+            try {
+              val = JSON.parse(trimmed);
+            } catch (e) {
+              // leave as string
+            }
+          }
+        }
+
+        // If key contains bracket or dot notation, map into nested object
+        if (key.includes('[') || key.includes('.')) {
+          setNested(req.body, key, val);
+          // remove the original flat key
+          delete req.body[key];
+        } else if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
+          // already parsed object (e.g., JSON parsed) - assign back
+          req.body[key] = val;
+        } else {
+          req.body[key] = val;
+        }
+      });
+    } catch (e) {
+      // ignore parsing errors; validation will handle malformed input
+      console.warn('Failed to parse multipart fields', e);
+    }
+    next();
+  },
   createRequestValidation,
   handleValidationErrors,
   asyncHandler(async (req, res) => {
+    // req.body will contain text fields; req.files will contain uploaded files (if any)
     const requestData = {
       ...req.body,
       requester: req.user._id
     };
+
+    // Process uploaded files and add metadata to requestData.attachments
+    if (req.files && req.files.length > 0) {
+      requestData.attachments = req.files.map(f => ({
+        filename: f.filename,
+        originalName: f.originalname,
+        path: f.path,
+        url: `/uploads/${f.filename}`,
+        mimetype: f.mimetype,
+        size: f.size,
+        uploadedAt: new Date()
+      }));
+    }
 
     const request = await Request.create(requestData);
     

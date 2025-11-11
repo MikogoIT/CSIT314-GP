@@ -1,9 +1,11 @@
 // PIN创建请求表单
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 const CreateRequestForm = ({ onClose, onSubmit, initialData = null, isEditing = false }) => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
     category: initialData?.category || '',
@@ -18,6 +20,7 @@ const CreateRequestForm = ({ onClose, onSubmit, initialData = null, isEditing = 
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [attachments, setAttachments] = useState([]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -87,6 +90,10 @@ const CreateRequestForm = ({ onClose, onSubmit, initialData = null, isEditing = 
         assignedCSR: null,
         matchedVolunteers: []
       };
+      // 如果有附件，则把 File 对象传递给上层（DataService 将使用 multipart 上传）
+      if (attachments && attachments.length > 0) {
+        requestData.attachments = attachments;
+      }
       
       await onSubmit(requestData);
       onClose();
@@ -97,31 +104,43 @@ const CreateRequestForm = ({ onClose, onSubmit, initialData = null, isEditing = 
     }
   };
 
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    // 合并到当前附件列表（限制可通过后端限制环境变量控制）
+    setAttachments(prev => [...prev, ...files]);
+    // 清空输入以允许再次选择相同文件名
+    e.target.value = '';
+  };
+
+  const removeAttachment = (index) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
   return (
     <div className="modal-backdrop">
       <div className="modal form-modal">
         <div className="modal-header">
-          <h3 className="modal-title">
-            {isEditing ? '编辑求助请求' : '创建新的求助请求'}
-          </h3>
-          <button className="modal-close" onClick={onClose} type="button">
-            ✕
-          </button>
-        </div>
+            <h3 className="modal-title">
+              {isEditing ? t('request.form.edit') : t('request.form.create')}
+            </h3>
+            <button className="modal-close" onClick={onClose} type="button">
+              ✕
+            </button>
+          </div>
         
         <div className="modal-body">
           <form onSubmit={handleSubmit} className="form">
             <div className="form-section">
-              <h4 className="form-section-title">基本信息</h4>
+              <h4 className="form-section-title">{t('request.section.basicInfo')}</h4>
               
               <div className="form-grid cols-2">
                 <div className="form-group">
-                  <label className="form-label required">请求标题 <small>(至少5个字符)</small></label>
+                  <label className="form-label required">{t('request.form.title')} <small>({t('request.validation.titleMinHint')})</small></label>
                   <input 
                     type="text" 
                     name="title"
                     className="form-input"
-                    placeholder="请用至少5个字符简要描述您的需求" 
+                    placeholder={t('request.form.titlePlaceholder')}
                     value={formData.title}
                     onChange={handleChange}
                     minLength="5"
@@ -131,7 +150,7 @@ const CreateRequestForm = ({ onClose, onSubmit, initialData = null, isEditing = 
                 </div>
                 
                 <div className="form-group">
-                  <label className="form-label required">服务类型</label>
+                  <label className="form-label required">{t('request.form.category')}</label>
                   <select 
                     name="category"
                     className="form-select"
@@ -139,24 +158,24 @@ const CreateRequestForm = ({ onClose, onSubmit, initialData = null, isEditing = 
                     onChange={handleChange}
                     required
                   >
-                    <option value="">选择服务类型</option>
-                    <option value="medical">医疗陪同</option>
-                    <option value="transportation">交通帮助</option>
-                    <option value="shopping">购物协助</option>
-                    <option value="household">家务帮助</option>
-                    <option value="companion">陪伴服务</option>
-                    <option value="technology">技术支持</option>
-                    <option value="other">其他</option>
+                    <option value="">{t('common.all')}</option>
+                    <option value="medical">{t('category.medical')}</option>
+                    <option value="transportation">{t('category.transportation')}</option>
+                    <option value="shopping">{t('category.shopping')}</option>
+                    <option value="household">{t('category.household')}</option>
+                    <option value="companion">{t('category.companion')}</option>
+                    <option value="technology">{t('category.technology')}</option>
+                    <option value="other">{t('category.other')}</option>
                   </select>
                 </div>
               </div>
               
               <div className="form-group full-width">
-                <label className="form-label required">详细描述 <small>(至少10个字符)</small></label>
+                <label className="form-label required">{t('request.form.description')} <small>({t('request.validation.descriptionMinHint')})</small></label>
                 <textarea 
                   name="description"
                   className="form-textarea"
-                  placeholder="请用至少10个字符详细描述您的需求，包括具体要求、注意事项等"
+                  placeholder={t('request.form.descriptionPlaceholder')}
                   rows="4"
                   value={formData.description}
                   onChange={handleChange}
@@ -168,12 +187,12 @@ const CreateRequestForm = ({ onClose, onSubmit, initialData = null, isEditing = 
               
               <div className="form-grid cols-2">
                 <div className="form-group">
-                  <label className="form-label required">服务地点</label>
+                  <label className="form-label required">{t('request.form.location')}</label>
                   <input 
                     type="text" 
                     name="location"
                     className="form-input"
-                    placeholder="详细地址或区域" 
+                    placeholder={t('request.form.locationPlaceholder')}
                     value={formData.location}
                     onChange={handleChange}
                     required 
@@ -181,28 +200,28 @@ const CreateRequestForm = ({ onClose, onSubmit, initialData = null, isEditing = 
                 </div>
                 
                 <div className="form-group">
-                  <label className="form-label">紧急程度</label>
+                  <label className="form-label">{t('request.form.urgency')}</label>
                   <select 
                     name="urgency"
                     className="form-select"
                     value={formData.urgency}
                     onChange={handleChange}
                   >
-                    <option value="low">一般 - 可以等待</option>
-                    <option value="medium">中等 - 一周内</option>
-                    <option value="high">紧急 - 三天内</option>
-                    <option value="urgent">非常紧急 - 24小时内</option>
+                    <option value="low">{t('urgency.low')}</option>
+                    <option value="medium">{t('urgency.medium')}</option>
+                    <option value="high">{t('urgency.high')}</option>
+                    <option value="urgent">{t('urgency.urgent')}</option>
                   </select>
                 </div>
               </div>
             </div>
 
             <div className="form-section">
-              <h4 className="form-section-title">时间安排与其他要求</h4>
+              <h4 className="form-section-title">{t('request.section.timing')}</h4>
               
               <div className="form-grid cols-2">
                 <div className="form-group">
-                  <label className="form-label">期望日期</label>
+                  <label className="form-label">{t('request.form.expectedDate')}</label>
                   <input 
                     type="date" 
                     name="expectedDate"
@@ -214,63 +233,90 @@ const CreateRequestForm = ({ onClose, onSubmit, initialData = null, isEditing = 
                 </div>
                 
                 <div className="form-group">
-                  <label className="form-label">期望时间</label>
+                  <label className="form-label">{t('request.form.expectedTime')}</label>
                   <select 
                     name="expectedTime"
                     className="form-select"
                     value={formData.expectedTime}
                     onChange={handleChange}
                   >
-                    <option value="">任意时间</option>
-                    <option value="morning">上午 (9:00-12:00)</option>
-                    <option value="afternoon">下午 (12:00-18:00)</option>
-                    <option value="evening">晚上 (18:00-21:00)</option>
+                    <option value="">{t('common.all')}</option>
+                    <option value="morning">{t('time.morning')} (9:00-12:00)</option>
+                    <option value="afternoon">{t('time.afternoon')} (12:00-18:00)</option>
+                    <option value="evening">{t('time.evening')} (18:00-21:00)</option>
                   </select>
                 </div>
               </div>
               
               <div className="form-grid cols-2">
                 <div className="form-group">
-                  <label className="form-label">需要志愿者人数</label>
+                  <label className="form-label">{t('request.form.volunteersNeeded')}</label>
                   <select 
                     name="volunteersNeeded"
                     className="form-select"
                     value={formData.volunteersNeeded}
                     onChange={handleChange}
                   >
-                    <option value={1}>1人</option>
-                    <option value={2}>2人</option>
-                    <option value={3}>3人</option>
-                    <option value={4}>4人</option>
-                    <option value={5}>5人或以上</option>
+                    <option value={1}>1</option>
+                    <option value={2}>2</option>
+                    <option value={3}>3</option>
+                    <option value={4}>4</option>
+                    <option value={5}>5+</option>
                   </select>
                 </div>
                 
                 <div className="form-group">
-                  <label className="form-label">联系方式偏好</label>
+                  <label className="form-label">{t('request.form.contactMethod')}</label>
                   <select 
                     name="contactMethod"
                     className="form-select"
                     value={formData.contactMethod}
                     onChange={handleChange}
                   >
-                    <option value="phone">电话</option>
-                    <option value="email">邮箱</option>
-                    <option value="both">电话和邮箱</option>
+                    <option value="phone">{t('contact.phone')}</option>
+                    <option value="email">{t('contact.email')}</option>
+                    <option value="both">{t('contact.both')}</option>
                   </select>
                 </div>
               </div>
               
               <div className="form-group full-width">
-                <label className="form-label form-label-optional">补充说明</label>
+                <label className="form-label form-label-optional">{t('request.form.additionalNotes')}</label>
                 <textarea 
                   name="additionalNotes"
                   className="form-textarea"
-                  placeholder="任何其他需要说明的信息..."
+                  placeholder={t('request.form.additionalNotesPlaceholder')}
                   rows="3"
                   value={formData.additionalNotes}
                   onChange={handleChange}
                 />
+              </div>
+
+              <div className="form-group full-width">
+                <label className="form-label">
+                  {t('request.form.attachments')}
+                  <small className="form-hint"> {t('request.form.attachmentsHint')}</small>
+                </label>
+                <input
+                  type="file"
+                  name="attachments"
+                  aria-label={t('request.form.attachments')}
+                  className="form-input"
+                  onChange={handleFileChange}
+                  multiple
+                  accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                />
+
+                {attachments && attachments.length > 0 && (
+                  <div className="attachment-list">
+                    {attachments.map((f, idx) => (
+                      <div key={idx} className="attachment-item">
+                        <span className="attachment-name">{f.name}</span>
+                        <button type="button" className="attachment-remove" onClick={() => removeAttachment(idx)}>{t('common.delete')}</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </form>
@@ -283,7 +329,7 @@ const CreateRequestForm = ({ onClose, onSubmit, initialData = null, isEditing = 
             onClick={onClose}
             disabled={isSubmitting}
           >
-            取消
+            {t('common.cancel')}
           </button>
           <button 
             type="submit" 
@@ -292,7 +338,7 @@ const CreateRequestForm = ({ onClose, onSubmit, initialData = null, isEditing = 
             disabled={isSubmitting}
           >
             {isSubmitting && <span className="loading-spinner"></span>}
-            {isSubmitting ? '发布中...' : '发布请求'}
+            {isSubmitting ? t('request.form.submitting') : t('common.submit')}
           </button>
         </div>
       </div>
