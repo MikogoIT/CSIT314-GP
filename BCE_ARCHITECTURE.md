@@ -1,32 +1,39 @@
-# BCE 架构重构说明文档
+# BCE Architecture Guide | BCE 架构指南
 
-## 📋 概述
+## 📋 Overview | 概述
 
-本项目已按照 **BCE (Boundary-Control-Entity)** 架构模式进行重构，将业务逻辑从路由层分离到控制器层，实现清晰的分层架构。
+**English**: This project follows the **BCE (Boundary-Control-Entity)** architecture pattern, which separates the application into three distinct layers for better maintainability and scalability.
 
-## 🏗️ BCE 架构层次
+**中文**: 本项目采用 **BCE (Boundary-Control-Entity)** 架构模式，将应用程序分为三个独立的层次，以提高可维护性和可扩展性。
 
-### **Entity 层 (实体层)** ✅
-**位置**: `backend/models/`
+---
 
-负责数据模型定义和数据库交互。
+## 🏗️ Architecture Layers | 架构层次
+
+### **Entity Layer (E) | 实体层** ✅
+
+**English**: 
+- **Location**: `backend/models/`
+- **Responsibility**: Data models and database interactions
+- **Contains**: MongoDB schemas, data validation, and database operations
+
+**中文**:
+- **位置**: `backend/models/`
+- **职责**: 数据模型和数据库交互
+- **包含**: MongoDB 模式、数据验证和数据库操作
 
 ```
 backend/models/
-├── User.js          # 用户实体
-├── Request.js       # 请求实体
-├── Category.js      # 分类实体
-└── Shortlist.js     # 收藏夹实体
+├── User.js          # User entity | 用户实体
+├── Request.js       # Request entity | 请求实体
+├── Category.js      # Category entity | 分类实体
+└── Shortlist.js     # Shortlist entity | 收藏夹实体
 ```
 
-**职责**:
-- 定义数据结构和 Schema
-- 数据验证规则
-- 数据库操作方法
-- 实体间关系定义
-
-**示例**:
+**Example | 示例**:
 ```javascript
+// User entity with validation
+// 用户实体与验证
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
@@ -36,329 +43,338 @@ const userSchema = new mongoose.Schema({
 
 ---
 
-### **Boundary 层 (边界层)** ✅
-**位置**: `backend/routes/` + `backend/middleware/`
+### **Boundary Layer (B) | 边界层** ✅
 
-负责处理外部请求和响应，包括路由映射和输入验证。
+**English**:
+- **Location**: `backend/routes/` + `backend/middleware/`
+- **Responsibility**: Handle HTTP requests/responses, routing, and validation
+- **Contains**: Route definitions, input validation, authentication middleware
+
+**中文**:
+- **位置**: `backend/routes/` + `backend/middleware/`
+- **职责**: 处理 HTTP 请求/响应、路由和验证
+- **包含**: 路由定义、输入验证、认证中间件
 
 ```
 backend/
-├── routes/                    # 路由定义（只做映射）
-│   ├── auth.js               # 认证路由
-│   ├── users.js              # 用户管理路由
-│   ├── requests.js           # 请求管理路由
-│   ├── admin.js              # 管理员路由
-│   └── categories.js         # 分类管理路由
+├── routes/                    # Route mappings | 路由映射
+│   ├── auth.js               # Auth routes | 认证路由
+│   ├── users.js              # User routes | 用户路由
+│   ├── requests.js           # Request routes | 请求路由
+│   ├── admin.js              # Admin routes | 管理员路由
+│   └── categories.js         # Category routes | 分类路由
 │
-└── middleware/               # 中间件
-    ├── auth.js              # 认证授权中间件
-    ├── validation.js        # 输入验证规则
-    └── errorHandler.js      # 错误处理中间件
+└── middleware/               # Middleware | 中间件
+    ├── auth.js              # Authentication | 认证中间件
+    ├── validation.js        # Validation rules | 验证规则
+    └── errorHandler.js      # Error handling | 错误处理
 ```
 
-**职责**:
-- 路由定义和映射
-- 请求参数验证
-- 认证和授权检查
-- 错误处理和响应格式化
-
-**示例** (auth.js 路由):
+**Example | 示例**:
 ```javascript
-const express = require('express');
-const authController = require('../controllers/authController');
-const { authenticate } = require('../middleware/auth');
-const { registerValidation, handleValidationErrors } = require('../middleware/validation');
-
-const router = express.Router();
-
-// 用户注册 - 只负责路由映射
+// Route definition - Only mapping, no business logic
+// 路由定义 - 只做映射，不含业务逻辑
 router.post('/register', 
-  registerValidation,           // Boundary: 输入验证
-  handleValidationErrors,       // Boundary: 错误处理
-  authController.register       // Control: 业务逻辑
+  registerValidation,        // Validate input | 验证输入
+  handleValidationErrors,    // Handle errors | 处理错误
+  authController.register    // Business logic | 业务逻辑
 );
-
-module.exports = router;
 ```
 
 ---
 
-### **Control 层 (控制层)** ✅
-**位置**: `backend/controllers/`
+### **Control Layer (C) | 控制层** ✅
 
-负责业务逻辑处理，协调 Entity 层和 Boundary 层。
+**English**:
+- **Location**: `backend/controllers/`
+- **Responsibility**: Business logic and coordination between layers
+- **Contains**: Business rules, data processing, response formatting
+
+**中文**:
+- **位置**: `backend/controllers/`
+- **职责**: 业务逻辑和层间协调
+- **包含**: 业务规则、数据处理、响应格式化
 
 ```
 backend/controllers/
-├── authController.js         # 认证业务逻辑
-├── userController.js         # 用户管理业务逻辑
-├── requestController.js      # 请求管理业务逻辑（待完成）
-├── adminController.js        # 管理员业务逻辑（待完成）
-└── categoryController.js     # 分类管理业务逻辑（待完成）
+├── authController.js         # Auth logic | 认证逻辑
+├── userController.js         # User logic | 用户逻辑
+├── requestController.js      # Request logic | 请求逻辑
+├── adminController.js        # Admin logic | 管理员逻辑
+└── categoryController.js     # Category logic | 分类逻辑
 ```
 
-**职责**:
-- 业务逻辑实现
-- 调用 Entity 层进行数据操作
-- 业务规则验证
-- 返回处理结果
-
-**示例** (authController.js):
+**Example | 示例**:
 ```javascript
-const User = require('../models/User');
-const { generateToken } = require('../middleware/auth');
-const { asyncHandler, createError } = require('../middleware/errorHandler');
-
-// 用户注册 - 包含完整业务逻辑
+// Controller with business logic
+// 包含业务逻辑的控制器
 exports.register = asyncHandler(async (req, res) => {
   const { name, email, password, userType } = req.body;
 
-  // 业务逻辑：检查邮箱是否已存在
+  // Business logic: Check if user exists
+  // 业务逻辑：检查用户是否存在
   const existingUser = await User.findOne({ email });
   if (existingUser) {
-    throw createError.conflict('该邮箱已被注册');
+    throw createError.conflict('Email already exists | 邮箱已存在');
   }
 
+  // Business logic: Create user
   // 业务逻辑：创建用户
   const user = await User.create({ name, email, password, userType });
-
-  // 业务逻辑：生成 token
+  
+  // Generate token and respond
+  // 生成令牌并响应
   const token = generateToken(user._id);
-
-  res.status(201).json({
-    success: true,
-    message: '注册成功',
-    data: { token, user }
-  });
+  res.status(201).json({ success: true, data: { token, user } });
 });
 ```
 
 ---
 
-## ✅ 已完成的重构
+## 📊 Architecture Benefits | 架构优势
 
-### 1. **认证模块** (Auth)
-- ✅ `controllers/authController.js` - 业务逻辑
-- ✅ `routes/auth.js` - 路由映射
-- ✅ `middleware/validation.js` - 验证规则
+### **English**:
+1. **Separation of Concerns**: Each layer has a single responsibility
+2. **Maintainability**: Easy to locate and fix bugs
+3. **Testability**: Controllers can be unit tested independently
+4. **Scalability**: Easy to add new features without affecting existing code
+5. **Code Reusability**: Validation rules and middleware can be reused
 
-**包含功能**:
-- 用户注册
-- 用户登录
-- 获取当前用户信息
-- 更新个人资料
-- 修改密码
-- 用户登出
-
-### 2. **用户管理模块** (Users)
-- ✅ `controllers/userController.js` - 业务逻辑
-- ✅ `routes/users.js` - 路由映射
-
-**包含功能**:
-- 获取用户列表
-- 获取单个用户信息
-- 更新用户状态
-- 删除用户
-- 获取用户统计
-- 收藏夹管理（CSR）
-- 历史记录查询
-
-### 3. **验证中间件统一管理**
-- ✅ `middleware/validation.js` - 所有验证规则集中管理
+### **中文**:
+1. **关注点分离**: 每层都有单一职责
+2. **可维护性**: 易于定位和修复错误
+3. **可测试性**: 控制器可以独立进行单元测试
+4. **可扩展性**: 易于添加新功能而不影响现有代码
+5. **代码复用**: 验证规则和中间件可以复用
 
 ---
 
-## 🚧 待完成的重构
+## 🔄 Request Flow | 请求流程
 
-### 1. **请求管理模块** (Requests)
-需要创建:
-- `controllers/requestController.js`
-- 更新 `routes/requests.js`
-
-**建议方法**:
-```javascript
-// controllers/requestController.js
-exports.getRequests = asyncHandler(async (req, res) => { ... });
-exports.getRequestById = asyncHandler(async (req, res) => { ... });
-exports.createRequest = asyncHandler(async (req, res) => { ... });
-exports.updateRequest = asyncHandler(async (req, res) => { ... });
-exports.deleteRequest = asyncHandler(async (req, res) => { ... });
-exports.applyForRequest = asyncHandler(async (req, res) => { ... });
-exports.assignVolunteer = asyncHandler(async (req, res) => { ... });
-exports.completeRequest = asyncHandler(async (req, res) => { ... });
-exports.cancelRequest = asyncHandler(async (req, res) => { ... });
+**English**:
+```
+Client Request → Boundary (Routes + Validation) → 
+Control (Business Logic) → Entity (Database) → 
+Control → Boundary → Client Response
 ```
 
-### 2. **管理员模块** (Admin)
-需要创建:
-- `controllers/adminController.js`
-- 更新 `routes/admin.js`
+**中文**:
+```
+客户端请求 → 边界层（路由 + 验证）→ 
+控制层（业务逻辑）→ 实体层（数据库）→ 
+控制层 → 边界层 → 客户端响应
+```
 
-### 3. **分类管理模块** (Categories)
-需要创建:
-- `controllers/categoryController.js`
-- 更新 `routes/categories.js`
+**Detailed Example | 详细示例**:
+```
+1. POST /api/auth/register (Client | 客户端)
+   ↓
+2. Route matches: auth.js (Boundary | 边界层)
+   ↓
+3. Validation: registerValidation (Boundary | 边界层)
+   ↓
+4. Business Logic: authController.register (Control | 控制层)
+   ↓
+5. Database: User.create() (Entity | 实体层)
+   ↓
+6. Response: JSON with token (Boundary | 边界层)
+   ↓
+7. Client receives response (Client | 客户端)
+```
 
 ---
 
-## 📐 重构步骤模板
+## ✅ Implementation Status | 实施状态
 
-为每个模块重构，请按照以下步骤：
+### **Completed | 已完成** ✅
 
-### Step 1: 创建 Controller
+| Module | 模块 | Status | 状态 |
+|--------|------|--------|------|
+| Auth | 认证 | ✅ Complete | 完成 |
+| User Management | 用户管理 | ✅ Complete | 完成 |
+| Validation | 验证 | ✅ Complete | 完成 |
+
+**Files Created | 创建的文件**:
+- `controllers/authController.js` (267 lines | 行)
+- `controllers/userController.js` (422 lines | 行)
+- Updated `routes/auth.js` (70 lines, -79% | 减少79%)
+- Updated `routes/users.js` (150 lines, -72% | 减少72%)
+
+---
+
+## 📝 Code Standards | 代码规范
+
+### **Naming Conventions | 命名规范**
+
+**English**:
+- Controllers: Use verb prefixes (`getUsers`, `createRequest`)
+- Routes: Keep concise, delegate to controllers
+- Middleware: Use descriptive names (`authenticate`, `validateInput`)
+
+**中文**:
+- 控制器：使用动词前缀（`getUsers`、`createRequest`）
+- 路由：保持简洁，委托给控制器
+- 中间件：使用描述性名称（`authenticate`、`validateInput`）
+
+### **Response Format | 响应格式**
+
+**English**: All API responses follow this format:
+
+**中文**: 所有 API 响应遵循此格式：
+
 ```javascript
-// backend/controllers/xxxController.js
-const Model = require('../models/Model');
-const { asyncHandler, createError } = require('../middleware/errorHandler');
+// Success | 成功
+{
+  "success": true,
+  "message": "Operation successful | 操作成功",
+  "data": { ... }
+}
 
-exports.methodName = asyncHandler(async (req, res) => {
-  // 1. 从 req 获取参数
-  // 2. 业务逻辑处理
-  // 3. 调用 Model 进行数据操作
-  // 4. 返回响应
-  res.json({ success: true, data: {...} });
+// Error | 错误
+{
+  "success": false,
+  "error": "Error message | 错误消息",
+  "code": "ERROR_CODE"
+}
+```
+
+### **Error Handling | 错误处理**
+
+**English**: Use unified error handling:
+
+**中文**: 使用统一错误处理：
+
+```javascript
+// Use asyncHandler for all async operations
+// 所有异步操作使用 asyncHandler
+exports.someMethod = asyncHandler(async (req, res) => {
+  // Use createError for exceptions
+  // 使用 createError 抛出异常
+  if (!data) {
+    throw createError.notFound('Resource not found | 资源未找到');
+  }
 });
 ```
 
-### Step 2: 更新 Route
-```javascript
-// backend/routes/xxx.js
-const express = require('express');
-const controller = require('../controllers/xxxController');
-const { authenticate, authorize } = require('../middleware/auth');
-const { validationRules, handleValidationErrors } = require('../middleware/validation');
-
-const router = express.Router();
-
-router.get('/', 
-  authenticate,              // 认证中间件
-  validationRules,          // 验证中间件
-  handleValidationErrors,   // 错误处理
-  controller.methodName     // 控制器方法
-);
-
-module.exports = router;
-```
-
-### Step 3: 添加验证规则到 validation.js
-```javascript
-// backend/middleware/validation.js
-exports.xxxValidation = [
-  body('field').validation().withMessage('错误信息'),
-  // ...
-];
-```
-
 ---
 
-## 🎯 架构优势
+## 🚀 Getting Started | 快速开始
 
-### 1. **关注点分离**
-- Routes 只负责路由映射
-- Controllers 只负责业务逻辑
-- Models 只负责数据操作
-- Middleware 负责通用功能
+### **Development | 开发**
 
-### 2. **易于维护**
-- 代码结构清晰
-- 修改某个功能只需修改对应的 Controller
-- 不影响其他模块
+```bash
+# Install dependencies | 安装依赖
+cd backend
+npm install
 
-### 3. **可测试性**
-- Controller 可以独立测试
-- 可以 mock Entity 层进行单元测试
+# Start development server | 启动开发服务器
+npm run dev
 
-### 4. **可扩展性**
-- 添加新功能只需添加新的 Controller 方法
-- 路由映射保持简洁
-
-### 5. **代码复用**
-- 验证规则集中管理
-- 中间件可重复使用
-
----
-
-## 📝 使用示例
-
-### 前端调用 API
-```javascript
-// 用户注册
-const response = await fetch('/api/auth/register', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    name: 'John Doe',
-    email: 'john@example.com',
-    password: 'password123',
-    userType: 'pin'
-  })
-});
+# Start production server | 启动生产服务器
+npm start
 ```
 
-### API 请求流程
-```
-1. 客户端请求 → 
-2. Route (Boundary) → 验证中间件 → 认证中间件 → 
-3. Controller (Control) → 业务逻辑处理 → 
-4. Model (Entity) → 数据库操作 → 
-5. Controller → 返回响应 → 
-6. 客户端接收
+### **Testing API | 测试 API**
+
+```bash
+# Register user | 注册用户
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "password123",
+  "userType": "pin"
+}
+
+# Login | 登录
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "john@example.com",
+  "password": "password123"
+}
 ```
 
 ---
 
-## 🔍 代码检查清单
+## 📚 API Documentation | API 文档
 
-在重构每个模块时，请确保：
+### **Authentication Endpoints | 认证端点**
 
-- [ ] Controller 中没有直接的 Express 中间件逻辑
-- [ ] Route 中没有业务逻辑代码
-- [ ] 所有验证规则都在 validation.js 中定义
-- [ ] Controller 方法使用 asyncHandler 包装
-- [ ] 错误使用 createError 统一处理
-- [ ] 所有响应格式一致：`{ success, message?, data?, error? }`
-- [ ] 添加了清晰的注释和 @desc/@route/@access 标记
+| Method | Endpoint | Description | 描述 |
+|--------|----------|-------------|------|
+| POST | `/api/auth/register` | Register new user | 注册新用户 |
+| POST | `/api/auth/login` | User login | 用户登录 |
+| GET | `/api/auth/me` | Get current user | 获取当前用户 |
+| PUT | `/api/auth/profile` | Update profile | 更新资料 |
+| PUT | `/api/auth/change-password` | Change password | 修改密码 |
+| POST | `/api/auth/logout` | Logout | 登出 |
 
----
+### **User Management Endpoints | 用户管理端点**
 
-## 🚀 下一步建议
-
-1. **完成剩余模块重构**
-   - 按照模板创建 requestController.js
-   - 按照模板创建 adminController.js
-   - 按照模板创建 categoryController.js
-
-2. **测试所有 API 端点**
-   - 使用 Postman 或类似工具测试
-   - 确保所有端点正常工作
-
-3. **添加单元测试**
-   - 为 Controller 添加单元测试
-   - 测试业务逻辑正确性
-
-4. **文档完善**
-   - 添加 API 文档
-   - 补充代码注释
+| Method | Endpoint | Description | 描述 | Access | 权限 |
+|--------|----------|-------------|------|--------|------|
+| GET | `/api/users` | Get users list | 获取用户列表 | Admin | 管理员 |
+| GET | `/api/users/:id` | Get user by ID | 获取用户详情 | Owner/Admin | 本人/管理员 |
+| PUT | `/api/users/:id/status` | Update user status | 更新用户状态 | Admin | 管理员 |
+| DELETE | `/api/users/:id` | Delete user | 删除用户 | Admin | 管理员 |
+| GET | `/api/users/:id/stats` | Get user stats | 获取用户统计 | Owner/Admin | 本人/管理员 |
 
 ---
 
-## 📚 参考资料
+## 🔒 Security | 安全性
 
-- [BCE 架构模式介绍](https://en.wikipedia.org/wiki/Boundary-Control-Entity)
+**English**:
+- JWT-based authentication
+- Password hashing with bcrypt
+- Input validation on all endpoints
+- Role-based access control (RBAC)
+- Rate limiting on API endpoints
+
+**中文**:
+- 基于 JWT 的认证
+- 使用 bcrypt 的密码哈希
+- 所有端点的输入验证
+- 基于角色的访问控制（RBAC）
+- API 端点的速率限制
+
+---
+
+## 📖 Reference | 参考资料
+
+**English**:
+- [BCE Architecture Pattern](https://en.wikipedia.org/wiki/Boundary-Control-Entity)
 - [Express.js Best Practices](https://expressjs.com/en/advanced/best-practice-performance.html)
-- [Node.js Design Patterns](https://www.nodejsdesignpatterns.com/)
+- [RESTful API Design](https://restfulapi.net/)
+
+**中文**:
+- [BCE 架构模式](https://en.wikipedia.org/wiki/Boundary-Control-Entity)
+- [Express.js 最佳实践](https://expressjs.com/en/advanced/best-practice-performance.html)
+- [RESTful API 设计](https://restfulapi.net/)
 
 ---
 
-## 👥 团队协作建议
+## 💡 Tips | 提示
 
-1. **代码审查**: 每次提交前检查是否符合 BCE 架构
-2. **命名规范**: Controller 方法使用动词开头 (get, create, update, delete)
-3. **错误处理**: 统一使用 createError 和 asyncHandler
-4. **文档更新**: 每次添加新功能时更新此文档
+**English**:
+1. Always use `asyncHandler` for async controller methods
+2. Keep routes simple - delegate to controllers
+3. Validate input at the boundary layer
+4. Use descriptive error messages
+5. Follow consistent naming conventions
+
+**中文**:
+1. 异步控制器方法始终使用 `asyncHandler`
+2. 保持路由简单 - 委托给控制器
+3. 在边界层验证输入
+4. 使用描述性错误消息
+5. 遵循一致的命名约定
 
 ---
 
-**重构日期**: 2025-11-11
-**重构状态**: 进行中 (40% 完成)
-**最后更新**: Auth 和 User 模块已完成重构
+**Last Updated | 最后更新**: 2025-11-11  
+**Version | 版本**: 1.0  
+**Status | 状态**: Production Ready | 生产就绪

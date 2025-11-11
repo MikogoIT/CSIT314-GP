@@ -1,315 +1,301 @@
-# CSR志愿者系统 - 启动脚本使用说明
+# Project Startup Guide | 项目启动指南
 
-## 📋 脚本列表
+## 🚀 Quick Start | 快速开始
 
-### 完整启动脚本（推荐）
+### **Prerequisites | 前置要求**
 
-#### `start-complete.ps1` (PowerShell版本)
-**功能最完整的启动脚本**，包含环境检查、依赖安装、服务启动等全部功能。
+**English**:
+- Node.js 14+ installed
+- MongoDB installed and running
+- Git installed
 
-**使用方法:**
-```powershell
-# 标准启动（会自动安装依赖、检查环境、打开浏览器）
-.\start-complete.ps1
-
-# 跳过依赖安装（适用于依赖已安装的情况）
-.\start-complete.ps1 -SkipInstall
-
-# 不自动打开浏览器
-.\start-complete.ps1 -SkipBrowser
-
-# 组合使用参数
-.\start-complete.ps1 -SkipInstall -SkipBrowser
-```
-
-**功能特性:**
-- ✅ 检查Node.js和npm是否安装
-- ✅ 检查MongoDB是否运行
-- ✅ 自动检查并创建.env配置文件
-- ✅ 自动安装前端和后端依赖
-- ✅ 检查端口占用情况（3000和5000）
-- ✅ 在独立窗口中启动后端和前端
-- ✅ 自动打开浏览器
-- ✅ 显示详细的启动信息和测试账号
+**中文**:
+- 已安装 Node.js 14+
+- 已安装并运行 MongoDB
+- 已安装 Git
 
 ---
 
-#### `start-complete.bat` (批处理版本)
-**命令提示符版本**，功能与PowerShell版本相同，但兼容性更好。
+## 📦 Installation | 安装
 
-**使用方法:**
-```cmd
-双击运行 start-complete.bat
-```
+### **1. Install Dependencies | 安装依赖**
 
-**功能特性:**
-- ✅ 所有与PowerShell版本相同的功能
-- ✅ 无需PowerShell，直接双击运行
-- ✅ 适合所有Windows系统
-
----
-
-### 简化启动脚本
-
-#### `start.ps1`
-轻量级启动脚本，适合快速启动（需要已安装依赖）。
-
-**使用方法:**
-```powershell
-.\start.ps1
-```
-
-#### `start-backend.bat` / `start-backend.ps1`
-仅启动后端服务器。
-
-**使用方法:**
-```cmd
-start-backend.bat
-```
-
-#### `start-frontend.bat`
-仅启动前端应用。
-
-**使用方法:**
-```cmd
-start-frontend.bat
-```
-
----
-
-### 停止服务脚本
-
-#### `stop.ps1` (PowerShell版本)
-停止所有运行中的Node.js进程。
-
-**使用方法:**
-```powershell
-.\stop.ps1
-```
-
-#### `stop.bat` (批处理版本)
-停止所有运行中的Node.js进程。
-
-**使用方法:**
-```cmd
-stop.bat
-```
-
----
-
-## 🚀 快速开始
-
-### 首次启动
-1. **安装MongoDB** (如果还没有安装)
-   - 下载: https://www.mongodb.com/try/download/community
-   - 启动MongoDB服务
-
-2. **运行完整启动脚本**
-   ```powershell
-   # PowerShell方式（推荐）
-   .\start-complete.ps1
-   
-   # 或者双击运行
-   start-complete.bat
-   ```
-
-3. **等待服务启动**
-   - 后端服务: http://localhost:5000
-   - 前端应用: http://localhost:3000
-
-4. **使用测试账号登录**
-   - 管理员: `admin` / `admin123`
-   - CSR用户: `csr1` / `csr123`
-   - PIN用户: `pin1` / `pin123`
-
----
-
-### 日常使用
-如果依赖已安装，可以使用快速启动：
-
-```powershell
-# 跳过依赖检查，快速启动
-.\start-complete.ps1 -SkipInstall
-
-# 或使用简化版本
-.\start.ps1
-```
-
----
-
-## 📝 测试数据管理
-
-### 生成测试数据
-```cmd
-# 生成完整测试数据
-generate-test-data.bat
-
-# 或使用PowerShell版本
-.\generate-test-data.ps1
-```
-
-### 清除测试数据
-```cmd
-node clear-test-data.js
-```
-
-### 验证测试数据
-```cmd
+```bash
+# Backend | 后端
 cd backend
-node verify-test-data.js
+npm install
+
+# Frontend | 前端
+cd ..
+npm install
 ```
 
----
+### **2. Configure Environment | 配置环境**
 
-## ⚙️ 配置说明
+**English**: Create `.env` file in `backend/` folder:
 
-### 后端配置 (`backend\.env`)
+**中文**: 在 `backend/` 文件夹中创建 `.env` 文件：
+
 ```env
-# MongoDB连接字符串
-MONGODB_URI=mongodb://localhost:27017/csr-volunteer
+# MongoDB Connection | MongoDB 连接
+MONGODB_URI=mongodb://localhost:27017/volunteer-system
 
-# JWT密钥（重要：生产环境必须修改）
-JWT_SECRET=your-secret-key-change-this-in-production
+# JWT Secret | JWT 密钥
+JWT_SECRET=your-secret-key-here
 
-# 服务器端口
+# Server Port | 服务器端口
 PORT=5000
 
-# 运行环境
-NODE_ENV=development
+# Admin Email | 管理员邮箱
+ADMIN_EMAIL=admin@admin.com
 
-# 前端URL（用于CORS）
-FRONTEND_URL=http://localhost:3000
+# CORS Origin | 跨域源
+CORS_ORIGIN=http://localhost:3000
 ```
-
-**重要提示:**
-- 首次运行 `start-complete.ps1` 或 `start-complete.bat` 会自动创建 `.env` 模板
-- 请务必修改 `JWT_SECRET` 为随机字符串
-- 生产环境请修改所有敏感配置
 
 ---
 
-## 🛠️ 故障排除
+## 🎬 Running the Application | 运行应用
 
-### 问题1: PowerShell脚本无法运行
-**错误信息:** "无法加载文件，因为在此系统上禁止运行脚本"
+### **Option 1: Use Startup Scripts | 选项1：使用启动脚本**
 
-**解决方案:**
-```powershell
-# 以管理员身份运行PowerShell
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+```bash
+# Windows PowerShell
+.\start-complete.ps1
 
-# 或者使用批处理版本
+# Windows Command Prompt
 start-complete.bat
 ```
 
+### **Option 2: Manual Start | 选项2：手动启动**
+
+```bash
+# Terminal 1 - Backend | 终端1 - 后端
+cd backend
+npm run dev
+
+# Terminal 2 - Frontend | 终端2 - 前端
+npm start
+```
+
+**URLs | 访问地址**:
+- Frontend | 前端: `http://localhost:3000`
+- Backend | 后端: `http://localhost:5000`
+
 ---
 
-### 问题2: 端口被占用
-**错误信息:** "端口 3000 或 5000 已被占用"
+## 🗄️ Database Setup | 数据库设置
 
-**解决方案:**
-```powershell
-# 查看占用端口的进程
-netstat -ano | findstr :3000
-netstat -ano | findstr :5000
+```bash
+cd backend
 
-# 停止占用的进程
-.\stop.ps1  # 或 stop.bat
+# Initialize categories | 初始化分类
+node init-categories.js
 
-# 或手动终止进程
-taskkill /F /PID <进程ID>
+# Generate test data (optional) | 生成测试数据（可选）
+node generate-test-data.js
 ```
 
 ---
 
-### 问题3: MongoDB连接失败
-**错误信息:** "MongoNetworkError: failed to connect to server"
+## 🔑 Default Login | 默认登录
 
-**解决方案:**
-1. 确保MongoDB已启动
-   ```cmd
-   # 检查MongoDB服务
-   sc query MongoDB
-   
-   # 启动MongoDB服务
-   net start MongoDB
-   ```
+### **Admin | 管理员**
+- Email | 邮箱: `admin@admin.com`
+- Password | 密码: Set on first registration | 首次注册时设置
 
-2. 检查 `backend\.env` 中的 `MONGODB_URI` 配置
+### **Test Users | 测试用户**
+After running `generate-test-data.js` | 运行测试数据生成后:
+- PIN: `pin1@test.com` / `password123`
+- CSR: `csr1@test.com` / `password123`
 
 ---
 
-### 问题4: 依赖安装失败
-**错误信息:** "npm install failed"
+## 🌐 User Roles & Access | 用户角色与权限
 
-**解决方案:**
-```cmd
-# 清除npm缓存
-npm cache clean --force
+### **PIN Users | PIN 用户**
+**English**: Persons In Need - Request volunteer services
 
-# 删除node_modules和package-lock.json
-rmdir /s /q node_modules
-del package-lock.json
+**中文**: 需要帮助的人 - 请求志愿服务
 
-# 重新安装
+- Create service requests | 创建服务请求
+- View own requests | 查看自己的请求
+- Select volunteers | 选择志愿者
+- Rate completed services | 评价完成的服务
+
+### **CSR Users | CSR 用户**
+**English**: Community Service Representatives - Provide volunteer services
+
+**中文**: 社区服务代表 - 提供志愿服务
+
+- Browse available requests | 浏览可用请求
+- Apply for requests | 申请请求
+- Manage shortlist | 管理收藏夹
+- View service history | 查看服务历史
+
+### **Admin Users | 管理员**
+**English**: System administrators
+
+**中文**: 系统管理员
+
+- Manage users | 管理用户
+- View system reports | 查看系统报告
+- Manage categories | 管理分类
+- System configuration | 系统配置
+
+---
+
+## 📂 Project Structure | 项目结构
+
+```
+CSIT314-GP/
+├── backend/                   # Backend (Node.js + Express) | 后端
+│   ├── controllers/          # Business logic | 业务逻辑
+│   ├── models/              # Database models | 数据库模型
+│   ├── routes/              # API routes | API 路由
+│   ├── middleware/          # Middleware | 中间件
+│   └── server.js           # Entry point | 入口文件
+│
+├── src/                      # Frontend (React) | 前端
+│   ├── components/          # Components | 组件
+│   ├── pages/              # Pages | 页面
+│   ├── services/           # API services | API 服务
+│   └── App.jsx            # Main app | 主应用
+│
+└── BCE_ARCHITECTURE.md      # Architecture guide | 架构指南
+```
+
+---
+
+## 🛠️ Common Commands | 常用命令
+
+### **Development | 开发**
+
+```bash
+# Start backend in dev mode | 启动后端开发模式
+cd backend && npm run dev
+
+# Start frontend | 启动前端
+npm start
+
+# Run tests | 运行测试
+npm test
+```
+
+### **Database | 数据库**
+
+```bash
+cd backend
+
+# Initialize data | 初始化数据
+node init-categories.js
+
+# Generate test data | 生成测试数据
+node generate-test-data.js
+
+# Clear test data | 清除测试数据
+node clear-test-data.js
+
+# View admin info | 查看管理员信息
+node show-admin-info.js
+```
+
+---
+
+## 🔧 Troubleshooting | 故障排除
+
+### **MongoDB not running | MongoDB 未运行**
+```bash
+# Start MongoDB | 启动 MongoDB
+mongod
+
+# Or use MongoDB Compass | 或使用 MongoDB Compass
+```
+
+### **Port already in use | 端口被占用**
+```bash
+# Change backend port in .env | 修改后端端口
+PORT=5001
+
+# Change frontend port | 修改前端端口
+set PORT=3001 && npm start  # Windows
+PORT=3001 npm start         # Mac/Linux
+```
+
+### **Module not found | 模块未找到**
+```bash
+# Reinstall dependencies | 重新安装依赖
+rm -rf node_modules package-lock.json
 npm install
 ```
 
 ---
 
-## 📦 项目结构
+## 📊 API Testing | API 测试
+
+### **Using curl | 使用 curl**
+
+```bash
+# Register | 注册
+curl -X POST http://localhost:5000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Test","email":"test@test.com","password":"123456","userType":"pin"}'
+
+# Login | 登录
+curl -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@test.com","password":"123456"}'
 ```
-CSIT314-GP/
-├── start-complete.ps1      # 完整启动脚本（PowerShell）
-├── start-complete.bat      # 完整启动脚本（批处理）
-├── start.ps1               # 简化启动脚本
-├── stop.ps1                # 停止服务（PowerShell）
-├── stop.bat                # 停止服务（批处理）
-├── generate-test-data.bat  # 生成测试数据
-├── backend/
-│   ├── server.js          # 后端服务器入口
-│   ├── .env               # 环境配置（需手动创建）
-│   └── package.json       # 后端依赖配置
-├── src/                    # 前端源代码
-└── package.json            # 前端依赖配置
-```
+
+### **Using Postman | 使用 Postman**
+
+**English**: Import the API collection or test manually at:
+
+**中文**: 导入 API 集合或手动测试：
+
+Base URL | 基础地址: `http://localhost:5000/api`
 
 ---
 
-## 🔗 相关链接
+## 📖 Documentation | 文档
 
-- **MongoDB下载:** https://www.mongodb.com/try/download/community
-- **Node.js下载:** https://nodejs.org/
-- **项目文档:** 查看项目根目录下的其他 `.md` 文件
-
----
-
-## 💡 提示
-
-### 推荐工作流程
-
-1. **开发时:** 使用 `start-complete.ps1 -SkipInstall` 快速启动
-2. **调试时:** 分别启动前后端，方便查看日志
-   - 后端: `start-backend.bat`
-   - 前端: `start-frontend.bat`
-3. **结束时:** 使用 `stop.ps1` 或 `stop.bat` 停止所有服务
-
-### 性能优化
-- 首次启动需要安装依赖，大约需要 3-5 分钟
-- 后续启动使用 `-SkipInstall` 参数，只需 10-20 秒
-- 建议保持MongoDB服务始终运行，减少启动时间
+- **BCE Architecture | BCE 架构**: See `BCE_ARCHITECTURE.md`
+- **API Endpoints | API 端点**: Check backend routes files
+- **Components | 组件**: See `src/components/`
 
 ---
 
-## 📞 支持
+## 💡 Tips | 提示
 
-如有问题，请检查:
-1. Node.js 版本 >= 16.0.0
-2. MongoDB 正在运行
-3. 端口 3000 和 5000 未被占用
-4. 已正确配置 `backend\.env` 文件
+**English**:
+1. Always start MongoDB before backend
+2. Use Chrome DevTools for frontend debugging
+3. Check browser console for errors
+4. Use `npm run dev` for auto-reload during development
+
+**中文**:
+1. 启动后端前始终先启动 MongoDB
+2. 使用 Chrome 开发者工具调试前端
+3. 检查浏览器控制台的错误
+4. 开发时使用 `npm run dev` 启用自动重载
 
 ---
 
-**更新日期:** 2025-11-11  
-**脚本版本:** 1.0.0
+## 🎯 Next Steps | 下一步
+
+**English**:
+1. Start the application
+2. Register as different user types
+3. Explore the features
+4. Read `BCE_ARCHITECTURE.md` for technical details
+
+**中文**:
+1. 启动应用程序
+2. 注册不同类型的用户
+3. 探索功能
+4. 阅读 `BCE_ARCHITECTURE.md` 了解技术细节
+
+---
+
+**Version | 版本**: 1.0  
+**Last Updated | 最后更新**: 2025-11-11
