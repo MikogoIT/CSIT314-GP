@@ -17,42 +17,33 @@ const RequestDetailModal = ({ request, onClose }) => {
   };
 
   const getUrgencyName = (urgency) => {
-    const urgencyMap = {
-      low: '低',
-      medium: '中',
-      high: '高',
-      urgent: '紧急'
-    };
-    return urgencyMap[urgency] || urgency;
+    return t(`urgency.${urgency}`) || urgency;
   };
 
   const formatDateTime = (dateString, timeString) => {
     if (dateString) {
       const date = new Date(dateString);
-      const formattedDate = date.toLocaleDateString('zh-CN');
+      const locale = t('common.locale');
+      const formattedDate = date.toLocaleDateString(locale);
       
       // 处理时间段
       let timeDisplay = '';
       if (timeString) {
-        const timeMap = {
-          'morning': '上午 (9:00-12:00)',
-          'afternoon': '下午 (12:00-18:00)', 
-          'evening': '晚上 (18:00-21:00)'
-        };
-        timeDisplay = timeMap[timeString] || timeString;
+        const timeLabel = t(`time.${timeString}`);
+        timeDisplay = `${timeLabel} (${timeString === 'morning' ? '9:00-12:00' : timeString === 'afternoon' ? '12:00-18:00' : '18:00-21:00'})`;
         return `${formattedDate} ${timeDisplay}`;
       }
       
       return formattedDate;
     }
-    return '待定';
+    return t('common.unknown');
   };
 
   return (
     <div className="modal-backdrop">
       <div className="modal modal-lg">
         <div className="modal-header">
-          <h3 className="modal-title">请求详情</h3>
+          <h3 className="modal-title">{t('request.detail.title')}</h3>
           <button className="modal-close" onClick={onClose} type="button">
             ✕
           </button>
@@ -62,20 +53,20 @@ const RequestDetailModal = ({ request, onClose }) => {
           <div className="request-detail">
             {/* 基本信息 */}
             <div className="detail-section">
-              <h4 className="detail-section-title">基本信息</h4>
+              <h4 className="detail-section-title">{t('request.detail.basicInfo')}</h4>
               <div className="detail-grid">
                 <div className="detail-item">
-                  <label className="detail-label">请求标题</label>
+                  <label className="detail-label">{t('request.form.title')}</label>
                   <div className="detail-value">{request.title}</div>
                 </div>
                 <div className="detail-item">
-                  <label className="detail-label">服务类型</label>
+                  <label className="detail-label">{t('request.form.category')}</label>
                   <div className="detail-value">
                     <span className="category-tag">{getCategoryName(request.category)}</span>
                   </div>
                 </div>
                 <div className="detail-item">
-                  <label className="detail-label">紧急程度</label>
+                  <label className="detail-label">{t('request.form.urgency')}</label>
                   <div className="detail-value">
                     <span className={`urgency-badge ${request.urgency}`}>
                       {getUrgencyName(request.urgency)}
@@ -83,12 +74,10 @@ const RequestDetailModal = ({ request, onClose }) => {
                   </div>
                 </div>
                 <div className="detail-item">
-                  <label className="detail-label">状态</label>
+                  <label className="detail-label">{t('status.label')}</label>
                   <div className="detail-value">
                     <span className={`status-badge ${request.status}`}>
-                      {request.status === 'matched' ? '已匹配' : 
-                       request.status === 'pending' ? '等待匹配' : 
-                       request.status === 'completed' ? '已完成' : '未知状态'}
+                      {t(`status.${request.status}`)}
                     </span>
                   </div>
                 </div>
@@ -97,38 +86,38 @@ const RequestDetailModal = ({ request, onClose }) => {
 
             {/* 详细描述 */}
             <div className="detail-section">
-              <h4 className="detail-section-title">详细描述</h4>
+              <h4 className="detail-section-title">{t('request.detail.description')}</h4>
               <div className="detail-description">
-                {request.description || '无详细描述'}
+                {request.description || t('request.noDescription')}
               </div>
             </div>
 
             {/* 时间和地点 */}
             <div className="detail-section">
-              <h4 className="detail-section-title">时间和地点</h4>
+              <h4 className="detail-section-title">{t('request.detail.timing')}</h4>
               <div className="detail-grid">
                 <div className="detail-item">
-                  <label className="detail-label">服务地点</label>
+                  <label className="detail-label">{t('request.form.location')}</label>
                   <div className="detail-value">
-                    {request.location?.address || request.location || '待确定'}
+                    {request.location?.address || request.location || t('common.unknown')}
                   </div>
                 </div>
                 <div className="detail-item">
-                  <label className="detail-label">期望日期</label>
+                  <label className="detail-label">{t('request.form.expectedDate')}</label>
                   <div className="detail-value">
                     {formatDateTime(request.expectedDate, request.expectedTime)}
                   </div>
                 </div>
                 <div className="detail-item">
-                  <label className="detail-label">需要志愿者数量</label>
-                  <div className="detail-value">{request.volunteersNeeded || 1} 人</div>
+                  <label className="detail-label">{t('request.form.volunteersNeeded')}</label>
+                  <div className="detail-value">{request.volunteersNeeded || 1} {t('request.volunteers')}</div>
                 </div>
                 <div className="detail-item">
-                  <label className="detail-label">联系方式</label>
+                  <label className="detail-label">{t('request.form.contactMethod')}</label>
                   <div className="detail-value">
-                    {request.contactMethod === 'phone' ? '电话' : 
-                     request.contactMethod === 'email' ? '邮箱' : 
-                     request.contactMethod === 'both' ? '电话和邮箱' : '其他'}
+                    {request.contactMethod === 'phone' ? t('contact.phone') : 
+                     request.contactMethod === 'email' ? t('contact.email') : 
+                     request.contactMethod === 'both' ? t('contact.both') : t('contact.other')}
                   </div>
                 </div>
               </div>
@@ -136,11 +125,11 @@ const RequestDetailModal = ({ request, onClose }) => {
 
             {/* 请求人信息 */}
             <div className="detail-section">
-              <h4 className="detail-section-title">请求人信息</h4>
+              <h4 className="detail-section-title">{t('request.detail.requester')}</h4>
               <div className="requester-info">
                 <div className="requester-avatar">👤</div>
                 <div className="requester-details">
-                  <div className="requester-name">{request.requesterName || '未知用户'}</div>
+                  <div className="requester-name">{request.requesterName || t('common.unknown')}</div>
                   {request.requesterEmail && (
                     <div className="requester-contact">📧 {request.requesterEmail}</div>
                   )}
@@ -156,20 +145,20 @@ const RequestDetailModal = ({ request, onClose }) => {
 
             {/* 统计信息 */}
             <div className="detail-section">
-              <h4 className="detail-section-title">统计信息</h4>
+              <h4 className="detail-section-title">{t('request.detail.statistics')}</h4>
               <div className="stats-row">
                 <div className="stat-item">
-                  <span className="stat-label">浏览次数</span>
+                  <span className="stat-label">{t('request.detail.viewCount')}</span>
                   <span className="stat-value">👁️ {request.viewCount || 0}</span>
                 </div>
                 <div className="stat-item">
-                  <span className="stat-label">收藏次数</span>
+                  <span className="stat-label">{t('request.detail.shortlistCount')}</span>
                   <span className="stat-value">⭐ {request.shortlistCount || 0}</span>
                 </div>
                 <div className="stat-item">
-                  <span className="stat-label">创建时间</span>
+                  <span className="stat-label">{t('request.detail.createdAt')}</span>
                   <span className="stat-value">
-                    {request.createdAt ? new Date(request.createdAt).toLocaleString('zh-CN') : '未知'}
+                    {request.createdAt ? new Date(request.createdAt).toLocaleString(t('common.locale')) : t('common.unknown')}
                   </span>
                 </div>
               </div>
@@ -178,9 +167,68 @@ const RequestDetailModal = ({ request, onClose }) => {
             {/* 附加信息 */}
             {request.additionalNotes && (
               <div className="detail-section">
-                <h4 className="detail-section-title">附加说明</h4>
+                <h4 className="detail-section-title">{t('request.form.additionalNotes')}</h4>
                 <div className="detail-notes">
                   {request.additionalNotes}
+                </div>
+              </div>
+            )}
+
+            {/* 附件 */}
+            {request.attachments && request.attachments.length > 0 && (
+              <div className="detail-section">
+                <h4 className="detail-section-title">{t('request.form.attachments')} ({request.attachments.length})</h4>
+                <div className="attachments-list">
+                  {request.attachments.map((attachment, index) => {
+                    // 构建文件URL - 去掉API路径，只保留服务器地址
+                    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+                    const serverUrl = apiUrl.replace(/\/api\/?$/, '');
+                    const fileUrl = `${serverUrl}${attachment.url}`;
+                    
+                    return (
+                      <div key={index} className="attachment-item-view">
+                        <div className="attachment-icon">
+                          {attachment.mimetype?.startsWith('image/') ? '🖼️' : '📄'}
+                        </div>
+                        <div className="attachment-info">
+                          <div className="attachment-name">{attachment.originalName || attachment.filename}</div>
+                          <div className="attachment-meta">
+                            {attachment.size && (
+                              <span className="attachment-size">
+                                {(attachment.size / 1024).toFixed(2)} KB
+                              </span>
+                            )}
+                            {attachment.uploadedAt && (
+                              <span className="attachment-date">
+                                {new Date(attachment.uploadedAt).toLocaleDateString(t('common.locale'))}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="attachment-actions">
+                          {attachment.url && (
+                            <>
+                              <a 
+                                href={fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-sm btn-secondary"
+                              >
+                                {t('attachment.preview')}
+                              </a>
+                              <a 
+                                href={fileUrl}
+                                download={attachment.originalName}
+                                className="btn btn-sm btn-primary"
+                              >
+                                {t('common.download')}
+                              </a>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -191,7 +239,7 @@ const RequestDetailModal = ({ request, onClose }) => {
              request.assignedVolunteers.length > 0 && (
               <div className="detail-section">
                 <h4 className="detail-section-title">
-                  已分配志愿者 ({request.assignedVolunteers.length}人)
+                  {t('request.assignedVolunteers')} ({request.assignedVolunteers.length}{t('request.volunteers')})
                 </h4>
                 {request.assignedVolunteers.map((volunteer, index) => (
                   <div key={index} className="volunteer-info" style={{ marginBottom: index < request.assignedVolunteers.length - 1 ? '15px' : '0' }}>
@@ -199,7 +247,7 @@ const RequestDetailModal = ({ request, onClose }) => {
                       {volunteer.name?.charAt(0).toUpperCase() || '👤'}
                     </div>
                     <div className="volunteer-details">
-                      <div className="volunteer-name">{volunteer.name || '未知志愿者'}</div>
+                      <div className="volunteer-name">{volunteer.name || t('request.unknownVolunteer')}</div>
                       {volunteer.email && (
                         <div className="volunteer-contact" style={{ fontSize: '0.9em', color: '#666' }}>
                           📧 {volunteer.email}
@@ -211,11 +259,11 @@ const RequestDetailModal = ({ request, onClose }) => {
                         </div>
                       )}
                       <div className="volunteer-status" style={{ fontSize: '0.85em', color: '#888', marginTop: '5px' }}>
-                        分配时间: {volunteer.assignedAt ? new Date(volunteer.assignedAt).toLocaleString('zh-CN') : '未知'}
+                        {t('request.assignedTime')}: {volunteer.assignedAt ? new Date(volunteer.assignedAt).toLocaleString(t('common.locale')) : t('common.unknown')}
                       </div>
                       {volunteer.completedAt && (
                         <div className="volunteer-status" style={{ fontSize: '0.85em', color: '#4caf50', marginTop: '3px' }}>
-                          ✅ 完成时间: {new Date(volunteer.completedAt).toLocaleString('zh-CN')}
+                          ✅ {t('request.completedTime')}: {new Date(volunteer.completedAt).toLocaleString(t('common.locale'))}
                         </div>
                       )}
                       {volunteer.rating && (
@@ -293,7 +341,7 @@ const RequestDetailModal = ({ request, onClose }) => {
         
         <div className="modal-footer">
           <button className="btn btn-secondary" onClick={onClose}>
-            关闭
+            {t('common.close')}
           </button>
         </div>
       </div>

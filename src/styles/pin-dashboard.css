@@ -1,6 +1,7 @@
 /* PIN Dashboard - 现代化UI设计 */
+@import './request-detail.css';
 
-/* 主容�?*/
+/* 主容器 */
 .pin-dashboard-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #f8faff 0%, #e6f3ff 100%);
@@ -736,7 +737,7 @@
   letter-spacing: 0.5px;
 }
 
-/* 匹配的志愿者卡�?*/
+/* 匹配的志愿者卡�?*/
 .matched-volunteer-card {
   display: flex;
   align-items: center;
@@ -855,7 +856,7 @@
   font-size: 16px;
 }
 
-/* 空状态设�?*/
+/* 空状态设�?*/
 .pin-empty-state {
   text-align: center;
   padding: 60px 40px;
@@ -970,7 +971,7 @@
   50% { transform: translateY(-4px); }
 }
 
-/* 侧边栏设�?*/
+/* 侧边栏设�?*/
 .pin-sidebar {
   display: flex;
   flex-direction: column;
@@ -1023,7 +1024,7 @@
   padding: 24px;
 }
 
-/* 快速操作网�?*/
+/* 快速操作网�?*/
 .quick-actions-grid {
   display: flex;
   flex-direction: column;
@@ -1153,7 +1154,7 @@
   margin: 0;
 }
 
-/* 响应式设�?*/
+/* 响应式设�?*/
 @media (max-width: 1024px) {
   .pin-content-grid {
     grid-template-columns: 1fr;
@@ -1273,7 +1274,7 @@
   }
 }
 
-/* 申请者列表样�?*/
+/* 申请者列表样�?*/
 .interested-volunteers-section {
   margin-top: 16px;
   padding: 16px;
@@ -1363,7 +1364,7 @@
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
-/* 高亮申请者数�?*/
+/* 高亮申请者数�?*/
 .stat-item.highlight {
   background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
   border-color: #fbbf24;
@@ -1477,7 +1478,7 @@
   min-width: 100px;
 }
 
-/* ɸѡ������ؼ���ʽ */
+/* ɸѡ������ؼ���ʽ */
 .pin-filters-section {
   display: flex;
   align-items: center;

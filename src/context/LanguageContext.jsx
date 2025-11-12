@@ -49,7 +49,7 @@ export const LanguageProvider = ({ children }) => {
 
   const t = (key, variables = null, fallback = '') => {
     const translations = getTranslations(currentLanguage);
-    let text = translations[key] || fallback;
+    let text = translations[key] || fallback || key;
     
     if (variables && typeof variables === 'object') {
       Object.keys(variables).forEach(varKey => {
@@ -115,6 +115,7 @@ const getTranslations = (language) => {
       'common.newRequest': '新服务请求',
       'common.requestMatched': '请求已匹配',
       'common.locale': 'zh-CN',
+      'common.saving': '保存中...',
       
       // 时间相关
       'time.justNow': '刚刚',
@@ -748,6 +749,7 @@ const getTranslations = (language) => {
       'urgency.urgent': '紧急',
       
       // 状态
+      'status.label': '状态',
       'status.pending': '等待中',
       'status.matched': '已匹配',
       'status.completed': '已完成',
@@ -805,6 +807,18 @@ const getTranslations = (language) => {
       'request.detail.shortlistCount': '收藏次数',
       'request.detail.matchedAt': '匹配时间',
       'request.detail.noVolunteer': '暂无匹配志愿者',
+      'request.noDescription': '无详细描述',
+      'request.volunteers': '人',
+      'request.assignedVolunteers': '已分配志愿者',
+      'request.unknownVolunteer': '未知志愿者',
+      'request.assignedTime': '分配时间',
+      'request.completedTime': '完成时间',
+      
+      // 附件
+      'attachment.preview': '预览',
+      
+      // 联系方式
+      'contact.other': '其他',
       
       // 时间
       'time.justNow': '刚刚',
@@ -854,6 +868,7 @@ const getTranslations = (language) => {
       'common.createdAt': 'Created At',
       'common.volunteer': 'Volunteer',
       'common.locale': 'en-US',
+      'common.saving': 'Saving...',
       
       // Time Related
       'time.justNow': 'Just now',
@@ -1501,6 +1516,7 @@ const getTranslations = (language) => {
       'urgency.urgent': 'Urgent',
       
       // Status
+      'status.label': 'Status',
       'status.pending': 'Pending',
       'status.matched': 'Matched',
       'status.completed': 'Completed',
@@ -1558,6 +1574,18 @@ const getTranslations = (language) => {
       'request.detail.shortlistCount': 'Shortlist Count',
       'request.detail.matchedAt': 'Matched At',
       'request.detail.noVolunteer': 'No volunteer matched yet',
+      'request.noDescription': 'No detailed description',
+      'request.volunteers': ' volunteer(s)',
+      'request.assignedVolunteers': 'Assigned Volunteers',
+      'request.unknownVolunteer': 'Unknown Volunteer',
+      'request.assignedTime': 'Assigned At',
+      'request.completedTime': 'Completed At',
+      
+      // Attachments
+      'attachment.preview': 'Preview',
+      
+      // Contact methods
+      'contact.other': 'Other',
       
       // Time
       'time.justNow': 'Just now',
