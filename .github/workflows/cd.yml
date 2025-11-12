@@ -39,7 +39,7 @@ jobs:
     - name: Install and build frontend
       run: |
         if [ -f package-lock.json ]; then
-          npm ci
+          npm ci || npm install
         else
           npm install
         fi
