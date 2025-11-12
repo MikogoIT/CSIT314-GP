@@ -1,18 +1,12 @@
-// 认证配置文件
 export const AUTH_CONFIG = {
-  // 默认管理员密码（生产环境应该从环境变量读取）
   DEFAULT_ADMIN_PASSWORD: 'admin123',
-  
-  // 管理员邮箱域名
+ 
   ADMIN_EMAIL_DOMAIN: '@admin.com',
-  
-  // 密码最小长度
+
   MIN_PASSWORD_LENGTH: 6,
-  
-  // JWT过期时间（前端模拟用）
+
   TOKEN_EXPIRY: '24h',
-  
-  // 密码验证规则
+
   PASSWORD_RULES: {
     minLength: 6,
     requireUppercase: false,
@@ -22,7 +16,7 @@ export const AUTH_CONFIG = {
   }
 };
 
-// 验证密码强度
+
 export const validatePassword = (password) => {
   const rules = AUTH_CONFIG.PASSWORD_RULES;
   const errors = [];
