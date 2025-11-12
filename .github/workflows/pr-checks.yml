@@ -1,0 +1,113 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  pr-validation:
+    name: PR Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    
+    - name: Check PR title
+      run: |
+        PR_TITLE="${{ github.event.pull_request.title }}"
+        echo "PR Title: $PR_TITLE"
+        
+        # Check if title follows conventional commits format
+        if [[ ! "$PR_TITLE" =~ ^(feat|fix|docs|style|refactor|test|chore|perf)(\(.+\))?: ]]; then
+          echo "⚠️ PR title should follow conventional commits format"
+          echo "Examples: feat: add new feature, fix: resolve bug"
+        else
+          echo "✅ PR title format is correct"
+        fi
+    
+    - name: Check PR description
+      run: |
+        if [ -z "${{ github.event.pull_request.body }}" ]; then
+          echo "⚠️ Please add a description to your PR"
+        else
+          echo "✅ PR has a description"
+        fi
+    
+    - name: Check for breaking changes
+      run: |
+        echo "Checking for breaking changes..."
+        git diff origin/${{ github.base_ref }}...HEAD --name-only | grep -E "(package.json|package-lock.json|backend/package.json)" && echo "⚠️ Dependency changes detected" || echo "✅ No dependency changes"
+
+  code-review-bot:
+    name: Automated Code Review
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run linting
+      run: npm run lint --if-present || echo "Linting completed"
+      continue-on-error: true
+    
+    - name: Check file sizes
+      run: |
+        echo "Checking for large files..."
+        find . -type f -size +1M -not -path "*/node_modules/*" -not -path "*/.git/*" || echo "No large files found"
+    
+    - name: Comment on PR
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '👋 Thanks for your contribution! The automated checks are running. Please ensure all tests pass before requesting a review.'
+          })
+
+  size-check:
+    name: Bundle Size Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build and check size
+      run: |
+        npm run build
+        BUILD_SIZE=$(du -sh build | cut -f1)
+        echo "Build size: $BUILD_SIZE"
+        echo "BUILD_SIZE=$BUILD_SIZE" >> $GITHUB_ENV
+    
+    - name: Comment bundle size
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const size = process.env.BUILD_SIZE;
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `📦 Bundle size: **${size}**`
+          })

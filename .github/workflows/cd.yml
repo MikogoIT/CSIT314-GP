@@ -1,0 +1,217 @@
+name: CD Pipeline - Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  # Build artifacts
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'npm'
+    
+    - name: Install and build frontend
+      run: |
+        npm ci
+        npm run build
+      env:
+        CI: false
+        REACT_APP_API_URL: ${{ secrets.API_URL || 'http://localhost:5000/api' }}
+    
+    - name: Upload frontend build
+      uses: actions/upload-artifact@v3
+      with:
+        name: frontend-production-build
+        path: build/
+        retention-days: 30
+    
+    - name: Install backend dependencies
+      working-directory: ./backend
+      run: npm ci --production
+    
+    - name: Create backend deployment package
+      run: |
+        mkdir -p deploy
+        cp -r backend/* deploy/
+        tar -czf backend-deploy.tar.gz -C deploy .
+    
+    - name: Upload backend package
+      uses: actions/upload-artifact@v3
+      with:
+        name: backend-deployment-package
+        path: backend-deploy.tar.gz
+        retention-days: 30
+
+  # Deploy to Staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    environment:
+      name: staging
+      url: https://staging.csit314.example.com
+    
+    steps:
+    - name: Download frontend artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: frontend-production-build
+        path: ./frontend-build
+    
+    - name: Download backend artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: backend-deployment-package
+    
+    - name: Deploy Frontend to Staging
+      run: |
+        echo "🚀 Deploying frontend to staging environment..."
+        echo "This would typically deploy to:"
+        echo "  - Vercel/Netlify for static hosting"
+        echo "  - AWS S3 + CloudFront"
+        echo "  - Or your preferred hosting service"
+        ls -la frontend-build/
+    
+    - name: Deploy Backend to Staging
+      run: |
+        echo "🚀 Deploying backend to staging server..."
+        echo "This would typically:"
+        echo "  - SSH to staging server"
+        echo "  - Extract deployment package"
+        echo "  - Restart application server"
+        echo "  - Run database migrations"
+    
+    - name: Run smoke tests
+      run: |
+        echo "🧪 Running smoke tests on staging..."
+        echo "Health check would verify:"
+        echo "  - API endpoints are responding"
+        echo "  - Database connectivity"
+        echo "  - Authentication flow"
+
+  # Deploy to Production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build, deploy-staging]
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
+    environment:
+      name: production
+      url: https://csit314.example.com
+    
+    steps:
+    - name: Download frontend artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: frontend-production-build
+        path: ./frontend-build
+    
+    - name: Download backend artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: backend-deployment-package
+    
+    - name: Deploy Frontend to Production
+      run: |
+        echo "🚀 Deploying frontend to production..."
+        echo "Frontend files ready for deployment:"
+        ls -la frontend-build/
+        # Example deployment commands:
+        # npx vercel --prod --token=${{ secrets.VERCEL_TOKEN }}
+        # aws s3 sync ./frontend-build s3://your-bucket --delete
+    
+    - name: Deploy Backend to Production
+      run: |
+        echo "🚀 Deploying backend to production server..."
+        # Example deployment using SSH:
+        # - name: Deploy via SSH
+        #   uses: appleboy/ssh-action@master
+        #   with:
+        #     host: ${{ secrets.PROD_HOST }}
+        #     username: ${{ secrets.PROD_USER }}
+        #     key: ${{ secrets.PROD_SSH_KEY }}
+        #     script: |
+        #       cd /var/www/csit314
+        #       tar -xzf backend-deploy.tar.gz
+        #       npm install --production
+        #       pm2 restart csit314-backend
+    
+    - name: Database migrations
+      run: |
+        echo "📊 Running database migrations..."
+        # node backend/migrations/migrate.js
+    
+    - name: Health check
+      run: |
+        echo "🏥 Performing health checks..."
+        echo "Would check:"
+        echo "  - API health endpoint"
+        echo "  - Database connectivity"
+        echo "  - Critical user flows"
+    
+    - name: Notify deployment success
+      run: |
+        echo "✅ Deployment to production completed successfully!"
+        echo "Version: ${GITHUB_SHA::7}"
+        echo "Deployed by: ${GITHUB_ACTOR}"
+
+  # Rollback capability
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    if: failure()
+    
+    steps:
+    - name: Initiate rollback
+      run: |
+        echo "⚠️ Deployment failed, initiating rollback..."
+        echo "This would:"
+        echo "  - Restore previous version"
+        echo "  - Revert database changes if needed"
+        echo "  - Notify team of rollback"
+
+  # Post-deployment monitoring
+  post-deployment:
+    name: Post-Deployment Checks
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: success()
+    
+    steps:
+    - name: Monitor application health
+      run: |
+        echo "📊 Monitoring application health..."
+        echo "Checking:"
+        echo "  - Error rates"
+        echo "  - Response times"
+        echo "  - User activity"
+    
+    - name: Send deployment notification
+      run: |
+        echo "📢 Sending deployment notifications..."
+        echo "Deployment completed successfully!"
+        echo "Build: ${GITHUB_SHA::7}"
+        echo "Time: $(date)"

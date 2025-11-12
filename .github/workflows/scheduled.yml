@@ -1,0 +1,111 @@
+name: Scheduled Tasks
+
+on:
+  schedule:
+    # Run every day at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  dependency-update:
+    name: Check for Dependency Updates
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+    
+    - name: Check outdated dependencies (Frontend)
+      run: |
+        echo "Checking frontend dependencies..."
+        npm outdated || true
+    
+    - name: Check outdated dependencies (Backend)
+      working-directory: ./backend
+      run: |
+        echo "Checking backend dependencies..."
+        npm outdated || true
+
+  security-audit:
+    name: Daily Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+    
+    - name: Security audit (Frontend)
+      run: |
+        echo "Running security audit for frontend..."
+        npm audit --json > frontend-audit.json || true
+    
+    - name: Security audit (Backend)
+      working-directory: ./backend
+      run: |
+        echo "Running security audit for backend..."
+        npm audit --json > backend-audit.json || true
+    
+    - name: Upload audit results
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-audit-${{ github.run_number }}
+        path: |
+          frontend-audit.json
+          backend/backend-audit.json
+        retention-days: 30
+
+  cleanup-old-artifacts:
+    name: Cleanup Old Artifacts
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Delete old artifacts
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const days = 30;
+          const timestamp = Date.now() - (days * 24 * 60 * 60 * 1000);
+          
+          const artifacts = await github.rest.actions.listArtifactsForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            per_page: 100
+          });
+          
+          for (const artifact of artifacts.data.artifacts) {
+            if (Date.parse(artifact.created_at) < timestamp) {
+              console.log(`Deleting artifact: ${artifact.name}`);
+              await github.rest.actions.deleteArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: artifact.id
+              });
+            }
+          }
+
+  health-check:
+    name: Production Health Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check production health
+      run: |
+        echo "Performing health check..."
+        # curl -f https://your-production-url.com/api/health || exit 1
+        echo "Health check would verify production status"
+    
+    - name: Notify if unhealthy
+      if: failure()
+      run: |
+        echo "⚠️ Production health check failed!"
+        echo "Notification would be sent to team"

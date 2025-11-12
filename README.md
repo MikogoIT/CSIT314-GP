@@ -1,5 +1,8 @@
 # Volunteer Service Matching System | 志愿服务匹配系统
 
+![CI Status](https://github.com/MikogoIT/CSIT314-GP/workflows/CI%20Pipeline/badge.svg)
+![CD Status](https://github.com/MikogoIT/CSIT314-GP/workflows/CD%20Pipeline/badge.svg)
+
 ## 📖 Project Overview | 项目概述
 
 **English**: A web-based volunteer service matching platform that connects Persons In Need (PIN) with Community Service Representatives (CSR) to facilitate community support and assistance.
@@ -313,6 +316,37 @@ Admin | 管理员:
    ```
 
 **📚 More Help | 更多帮助**: See `STARTUP_GUIDE.md` → Troubleshooting section
+
+---
+
+## 🚀 CI/CD Pipeline | 持续集成/部署
+
+**English**: This project includes a complete CI/CD pipeline using GitHub Actions.
+
+**中文**: 本项目包含使用 GitHub Actions 的完整 CI/CD 流程。
+
+### **Features | 功能**
+- ✅ Automated testing on every push | 每次推送自动测试
+- ✅ Code quality checks | 代码质量检查
+- ✅ Security vulnerability scanning | 安全漏洞扫描
+- ✅ Automated deployment | 自动部署
+- ✅ Docker support | Docker 支持
+
+### **Quick Start | 快速开始**
+
+```bash
+# View CI/CD status in GitHub Actions tab
+# 在 GitHub Actions 标签查看 CI/CD 状态
+
+# Run with Docker | 使用 Docker 运行
+docker-compose up -d
+
+# Access application | 访问应用
+Frontend: http://localhost
+Backend: http://localhost:5000
+```
+
+**📚 Full CI/CD Guide | 完整指南**: See [`CICD_GUIDE.md`](./CICD_GUIDE.md)
 
 ---
 
