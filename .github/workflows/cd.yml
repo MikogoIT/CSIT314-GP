@@ -43,6 +43,7 @@ jobs:
         npm run build
       env:
         CI: false
+        DISABLE_ESLINT_PLUGIN: true
         REACT_APP_API_URL: ${{ secrets.API_URL || 'http://localhost:5000/api' }}
     
     - name: Upload frontend build

@@ -1,6 +1,6 @@
 // src/context/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { AUTH_CONFIG, isAdminEmail } from '../config/auth';
+// import { AUTH_CONFIG, isAdminEmail } from '../config/auth';
 import apiService from '../services/apiService';
 
 const AuthContext = createContext();

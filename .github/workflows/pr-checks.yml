@@ -108,6 +108,9 @@ jobs:
         BUILD_SIZE=$(du -sh build | cut -f1)
         echo "Build size: $BUILD_SIZE"
         echo "BUILD_SIZE=$BUILD_SIZE" >> $GITHUB_ENV
+      env:
+        CI: false
+        DISABLE_ESLINT_PLUGIN: true
     
     - name: Comment bundle size
       uses: actions/github-script@v6

@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import Navbar from '../../components/Layout/Navbar';
 import { isSystemAdmin } from '../../utils/permissions';
-import apiService from '../../services/apiService';
+// import apiService from '../../services/apiService';
 import '../../styles/user-management.css';
 
 const SystemLogs = () => {
