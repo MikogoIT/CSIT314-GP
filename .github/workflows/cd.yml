@@ -38,7 +38,11 @@ jobs:
     
     - name: Install and build frontend
       run: |
-        npm ci
+        if [ -f package-lock.json ]; then
+          npm ci
+        else
+          npm install
+        fi
         npm run build
       env:
         CI: false

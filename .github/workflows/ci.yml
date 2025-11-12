@@ -31,7 +31,12 @@ jobs:
         cache: 'npm'
     
     - name: Install frontend dependencies
-      run: npm ci
+      run: |
+        if [ -f package-lock.json ]; then
+          npm ci
+        else
+          npm install
+        fi
     
     - name: Run ESLint
       run: npm run lint --if-present || echo "No lint script found, skipping..."
