@@ -43,7 +43,8 @@ jobs:
         else
           npm install
         fi
-        npx react-scripts build
+        chmod -R +x node_modules/.bin 2>/dev/null || true
+        node node_modules/.bin/react-scripts build
       env:
         CI: false
         REACT_APP_API_URL: ${{ secrets.API_URL || 'http://localhost:5000/api' }}

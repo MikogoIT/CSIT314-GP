@@ -37,17 +37,18 @@ jobs:
         else
           npm install
         fi
+        chmod -R +x node_modules/.bin 2>/dev/null || true
     
     - name: Run ESLint
       run: npm run lint --if-present || echo "No lint script found, skipping..."
     
     - name: Run frontend tests
-      run: npx react-scripts test --watchAll=false --passWithNoTests
+      run: node node_modules/.bin/react-scripts test --watchAll=false --passWithNoTests
       env:
         CI: true
     
     - name: Build frontend
-      run: npx react-scripts build
+      run: node node_modules/.bin/react-scripts build
       env:
         CI: false
     

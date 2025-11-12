@@ -66,6 +66,7 @@ jobs:
         else
           npm install
         fi
+        chmod -R +x node_modules/.bin 2>/dev/null || true
     
     - name: Run linting
       run: npm run lint --if-present || echo "Linting completed"
@@ -107,10 +108,11 @@ jobs:
         else
           npm install
         fi
+        chmod -R +x node_modules/.bin 2>/dev/null || true
     
     - name: Build and check size
       run: |
-        npx react-scripts build
+        node node_modules/.bin/react-scripts build
         BUILD_SIZE=$(du -sh build | cut -f1)
         echo "Build size: $BUILD_SIZE"
         echo "BUILD_SIZE=$BUILD_SIZE" >> $GITHUB_ENV
