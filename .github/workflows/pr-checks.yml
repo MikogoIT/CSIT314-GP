@@ -110,7 +110,7 @@ jobs:
     
     - name: Build and check size
       run: |
-        npm run build
+        npx react-scripts build
         BUILD_SIZE=$(du -sh build | cut -f1)
         echo "Build size: $BUILD_SIZE"
         echo "BUILD_SIZE=$BUILD_SIZE" >> $GITHUB_ENV

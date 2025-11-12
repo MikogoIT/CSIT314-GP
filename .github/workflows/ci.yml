@@ -42,12 +42,12 @@ jobs:
       run: npm run lint --if-present || echo "No lint script found, skipping..."
     
     - name: Run frontend tests
-      run: npm test -- --watchAll=false --passWithNoTests
+      run: npx react-scripts test --watchAll=false --passWithNoTests
       env:
         CI: true
     
     - name: Build frontend
-      run: npm run build
+      run: npx react-scripts build
       env:
         CI: false
     
