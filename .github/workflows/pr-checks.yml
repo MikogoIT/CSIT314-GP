@@ -61,11 +61,7 @@ jobs:
     
     - name: Install dependencies
       run: |
-        if [ -f package-lock.json ]; then
-          npm ci || npm install
-        else
-          npm install
-        fi
+        npm install
         chmod -R +x node_modules/.bin 2>/dev/null || true
     
     - name: Run linting
@@ -103,16 +99,12 @@ jobs:
     
     - name: Install dependencies
       run: |
-        if [ -f package-lock.json ]; then
-          npm ci || npm install
-        else
-          npm install
-        fi
+        npm install
         chmod -R +x node_modules/.bin 2>/dev/null || true
     
     - name: Build and check size
       run: |
-        node node_modules/.bin/react-scripts build
+        npm run build
         BUILD_SIZE=$(du -sh build | cut -f1)
         echo "Build size: $BUILD_SIZE"
         echo "BUILD_SIZE=$BUILD_SIZE" >> $GITHUB_ENV

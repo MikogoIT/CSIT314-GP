@@ -32,23 +32,19 @@ jobs:
     
     - name: Install frontend dependencies
       run: |
-        if [ -f package-lock.json ]; then
-          npm ci || npm install
-        else
-          npm install
-        fi
+        npm install
         chmod -R +x node_modules/.bin 2>/dev/null || true
     
     - name: Run ESLint
       run: npm run lint --if-present || echo "No lint script found, skipping..."
     
     - name: Run frontend tests
-      run: node node_modules/.bin/react-scripts test --watchAll=false --passWithNoTests
+      run: npm test -- --watchAll=false --passWithNoTests
       env:
         CI: true
     
     - name: Build frontend
-      run: node node_modules/.bin/react-scripts build
+      run: npm run build
       env:
         CI: false
     
