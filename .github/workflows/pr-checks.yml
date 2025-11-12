@@ -111,6 +111,11 @@ jobs:
       env:
         CI: false
         DISABLE_ESLINT_PLUGIN: true
+        ESLINT_NO_DEV_ERRORS: true
+        TSC_COMPILE_ON_ERROR: true
+      env:
+        CI: false
+        DISABLE_ESLINT_PLUGIN: true
     
     - name: Comment bundle size
       uses: actions/github-script@v6

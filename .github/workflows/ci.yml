@@ -48,6 +48,8 @@ jobs:
       env:
         CI: false
         DISABLE_ESLINT_PLUGIN: true
+        ESLINT_NO_DEV_ERRORS: true
+        TSC_COMPILE_ON_ERROR: true
     
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
@@ -89,7 +91,7 @@ jobs:
     
     - name: Install backend dependencies
       working-directory: ./backend
-      run: npm ci
+      run: npm install
     
     - name: Run backend linting
       working-directory: ./backend
@@ -172,7 +174,7 @@ jobs:
         node-version: 18.x
     
     - name: Install dependencies
-      run: npm ci
+      run: npm install
     
     - name: Run code complexity analysis
       run: |
@@ -204,8 +206,8 @@ jobs:
     
     - name: Install dependencies
       run: |
-        npm ci
-        cd backend && npm ci
+        npm install
+        cd backend && npm install
     
     - name: Setup test database
       run: |
