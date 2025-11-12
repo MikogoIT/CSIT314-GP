@@ -1,4 +1,3 @@
-// 个人信息页面
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -25,7 +24,6 @@ const Profile = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [avatarPreview, setAvatarPreview] = useState('');
 
-  // 初始化表单数据
   useEffect(() => {
     if (user) {
       setFormData({

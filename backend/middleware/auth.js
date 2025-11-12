@@ -1,17 +1,13 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// JWT认证中间件
 const authenticate = async (req, res, next) => {
   try {
     let token;
-    
-    // 从请求头获取token
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       token = req.headers.authorization.split(' ')[1];
     }
-    
-    // 检查token是否存在
+
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -21,10 +17,8 @@ const authenticate = async (req, res, next) => {
     }
     
     try {
-      // 验证token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      
-      // 查找用户
+
       const user = await User.findById(decoded.id).select('-password');
       if (!user) {
         return res.status(401).json({
@@ -33,8 +27,7 @@ const authenticate = async (req, res, next) => {
           code: 'USER_NOT_FOUND'
         });
       }
-      
-      // 检查用户状态
+
       if (user.status !== 'active') {
         return res.status(401).json({
           success: false,
@@ -43,7 +36,6 @@ const authenticate = async (req, res, next) => {
         });
       }
       
-      // 将用户信息添加到请求对象
       req.user = user;
       next();
       
@@ -65,7 +57,6 @@ const authenticate = async (req, res, next) => {
   }
 };
 
-// 角色权限中间件
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
@@ -88,7 +79,6 @@ const authorize = (...roles) => {
   };
 };
 
-// 仅管理员权限 (任意管理员类型)
 const adminOnly = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({
@@ -110,7 +100,6 @@ const adminOnly = (req, res, next) => {
   next();
 };
 
-// 超级管理员权限检查
 const superAdminOnly = (req, res, next) => {
   if (!req.user || req.user.userType !== 'admin' || !req.user.isSuper) {
     return res.status(403).json({
@@ -122,7 +111,6 @@ const superAdminOnly = (req, res, next) => {
   next();
 };
 
-// System Admin 权限检查
 const systemAdminOnly = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({
@@ -143,7 +131,6 @@ const systemAdminOnly = (req, res, next) => {
   next();
 };
 
-// Platform Manager 权限检查
 const platformManagerOnly = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({
@@ -164,7 +151,6 @@ const platformManagerOnly = (req, res, next) => {
   next();
 };
 
-// 任意管理员类型都可访问
 const anyAdminType = (...adminTypes) => {
   return (req, res, next) => {
     if (!req.user) {
@@ -175,7 +161,6 @@ const anyAdminType = (...adminTypes) => {
       });
     }
     
-    // 超级管理员拥有所有权限
     if (req.user.isSuper) {
       return next();
     }
@@ -192,7 +177,6 @@ const anyAdminType = (...adminTypes) => {
   };
 };
 
-// 权限检查中间件
 const checkPermission = (permission) => {
   return (req, res, next) => {
     if (!req.user) {
@@ -203,12 +187,10 @@ const checkPermission = (permission) => {
       });
     }
 
-    // 超级管理员拥有所有权限
     if (req.user.isSuper) {
       return next();
     }
 
-    // 检查用户是否有指定权限
     if (!req.user.hasPermission || !req.user.hasPermission(permission)) {
       return res.status(403).json({
         success: false,
@@ -221,16 +203,12 @@ const checkPermission = (permission) => {
   };
 };
 
-// PIN用户权限
 const pinOnly = authorize('pin');
 
-// CSR用户权限
 const csrOnly = authorize('csr');
 
-// PIN或CSR用户权限
 const userOnly = authorize('pin', 'csr');
 
-// 资源所有者权限（用户只能访问自己的资源）
 const ownerOrAdmin = (resourceField = 'user') => {
   return (req, res, next) => {
     if (!req.user) {
@@ -241,13 +219,11 @@ const ownerOrAdmin = (resourceField = 'user') => {
       });
     }
     
-    // 管理员可以访问所有资源
     const adminTypes = ['system_admin', 'platform_manager'];
     if (adminTypes.includes(req.user.userType)) {
       return next();
     }
     
-    // 检查资源所有权
     const userId = req.user._id.toString();
     const resourceUserId = req.params[resourceField] || req.body[resourceField] || req.query[resourceField];
     
@@ -263,7 +239,6 @@ const ownerOrAdmin = (resourceField = 'user') => {
   };
 };
 
-// JWT token生成工具
 const generateToken = (userId) => {
   return jwt.sign(
     { id: userId },
@@ -276,7 +251,6 @@ const generateToken = (userId) => {
   );
 };
 
-// 验证token工具（不需要中间件）
 const verifyToken = (token) => {
   try {
     return jwt.verify(token, process.env.JWT_SECRET);
@@ -285,12 +259,9 @@ const verifyToken = (token) => {
   }
 };
 
-// 从请求中提取用户ID
 const extractUserId = (req) => {
   return req.user ? req.user._id : null;
 };
-
-// Check if email is an admin email
 const isAdminEmail = (email) => {
   const adminEmails = [
     'mikogo@admin.com',

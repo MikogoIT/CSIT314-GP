@@ -14,26 +14,66 @@ const PINDashboard = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showRequestDetail, setShowRequestDetail] = useState(null);
   const [editingRequest, setEditingRequest] = useState(null);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [ratingRequestId, setRatingRequestId] = useState(null);
+  const [rating, setRating] = useState(5);
+  const [feedback, setFeedback] = useState('');
   
   const [requests, setRequests] = useState([]);
+  const [filteredRequests, setFilteredRequests] = useState([]);
+  const [statusFilter, setStatusFilter] = useState('all'); // all, pending, matched, completed
+  const [sortBy, setSortBy] = useState('newest'); // newest, oldest, urgent
 
   // 初始化数据和加载用户请求
   useEffect(() => {
+    let isMounted = true;
+    
     const loadUserData = async () => {
       try {
-        await DataService.initializeData();
-        if (user?.id) {
+        // PIN用户不需要调用initializeData，直接加载自己的请求
+        if (user?.id && isMounted) {
           const userRequests = await DataService.getUserRequests(user.id);
-          setRequests(userRequests || []); // 确保是数组
+          console.log('PIN Dashboard - 加载的请求数据:', userRequests);
+          if (isMounted) {
+            setRequests(userRequests || []); // 确保是数组
+          }
         }
       } catch (error) {
         console.error('加载用户数据失败:', error);
-        setRequests([]); // 设置为空数组防止错误
+        if (isMounted) {
+          setRequests([]); // 设置为空数组防止错误
+        }
       }
     };
     
     loadUserData();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [user?.id]);
+
+  // 筛选和排序请求
+  useEffect(() => {
+    let filtered = [...requests];
+    
+    // 按状态筛选
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(req => req.status === statusFilter);
+    }
+    
+    // 排序
+    if (sortBy === 'newest') {
+      filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    } else if (sortBy === 'oldest') {
+      filtered.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    } else if (sortBy === 'urgent') {
+      const urgencyOrder = { urgent: 0, high: 1, medium: 2, low: 3 };
+      filtered.sort((a, b) => urgencyOrder[a.urgency] - urgencyOrder[b.urgency]);
+    }
+    
+    setFilteredRequests(filtered);
+  }, [requests, statusFilter, sortBy]);
 
   // 使用数据服务获取统计信息
   const stats = [
@@ -146,6 +186,61 @@ const PINDashboard = () => {
         console.error('删除请求失败:', error);
         alert(t('error.deleteRequestFailed') || '删除请求失败');
       }
+    }
+  };
+
+  // 处理选择志愿者
+  const handleSelectVolunteer = async (requestId, volunteerId) => {
+    if (window.confirm(t('pin.dashboard.confirmSelect') || '确定选择这位志愿者吗？')) {
+      try {
+        // 调用匹配API
+        await DataService.matchRequest(requestId, volunteerId);
+        
+        // 重新加载用户请求
+        const userRequests = await DataService.getUserRequests(user.id);
+        setRequests(userRequests || []);
+        
+        alert(t('pin.dashboard.selectSuccess') || '已成功匹配志愿者！');
+      } catch (error) {
+        console.error('选择志愿者失败:', error);
+        alert(t('error.selectVolunteerFailed') || '选择志愿者失败，请重试');
+      }
+    }
+  };
+
+  // 处理完成请求
+  const handleCompleteRequest = async (requestId) => {
+    // 打开评分对话框
+    setRatingRequestId(requestId);
+    setRating(5);
+    setFeedback('');
+    setShowRatingModal(true);
+  };
+
+  const submitCompleteRequest = async () => {
+    if (!ratingRequestId) return;
+    
+    try {
+      // 调用完成请求API，传入评分和反馈
+      await DataService.completeRequest(ratingRequestId, {
+        rating,
+        feedback: feedback.trim()
+      });
+      
+      // 关闭对话框
+      setShowRatingModal(false);
+      setRatingRequestId(null);
+      setRating(5);
+      setFeedback('');
+      
+      // 重新加载用户请求
+      const userRequests = await DataService.getUserRequests(user.id);
+      setRequests(userRequests || []);
+      
+      alert(t('pin.dashboard.completeSuccess') || '请求已完成！感谢您的评价。');
+    } catch (error) {
+      console.error('完成请求失败:', error);
+      alert(t('error.completeRequestFailed') || '完成请求失败，请重试');
     }
   };
 
@@ -263,10 +358,58 @@ const PINDashboard = () => {
                   </div>
                 </div>
                 
+                {/* 筛选和排序控件 */}
+                {requests.length > 0 && (
+                  <div className="pin-filters-section">
+                    <div className="filter-group">
+                      <label className="filter-label">
+                        <span className="filter-icon">🔍</span>
+                        {t('pin.dashboard.filterByStatus') || '按状态筛选'}
+                      </label>
+                      <select 
+                        className="filter-select"
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                      >
+                        <option value="all">{t('common.all') || '全部'} ({requests.length})</option>
+                        <option value="pending">
+                          {t('pin.dashboard.status.pending') || '待处理'} ({requests.filter(r => r.status === 'pending').length})
+                        </option>
+                        <option value="matched">
+                          {t('pin.dashboard.status.matched') || '已匹配'} ({requests.filter(r => r.status === 'matched').length})
+                        </option>
+                        <option value="completed">
+                          {t('pin.dashboard.status.completed') || '已完成'} ({requests.filter(r => r.status === 'completed').length})
+                        </option>
+                      </select>
+                    </div>
+                    
+                    <div className="filter-group">
+                      <label className="filter-label">
+                        <span className="filter-icon">📅</span>
+                        {t('pin.dashboard.sortBy') || '排序方式'}
+                      </label>
+                      <select 
+                        className="filter-select"
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                      >
+                        <option value="newest">{t('pin.dashboard.sort.newest') || '最新创建'}</option>
+                        <option value="oldest">{t('pin.dashboard.sort.oldest') || '最早创建'}</option>
+                        <option value="urgent">{t('pin.dashboard.sort.urgent') || '按紧急程度'}</option>
+                      </select>
+                    </div>
+                    
+                    <div className="filter-results">
+                      {t('pin.dashboard.showing') || '显示'}: <strong>{filteredRequests.length}</strong> / {requests.length}
+                    </div>
+                  </div>
+                )}
+                
                 <div className="pin-card-content">
-                  {requests.length > 0 ? (
+                  {filteredRequests.length > 0 ? (
                     <div className="pin-requests-grid">
-                      {requests.map((request, index) => (
+                      {filteredRequests.map((request, index) => (
                         <div key={request.id || `request-${index}`} className="pin-request-card">
                           <div className="request-card-header">
                             <div className="request-priority-indicator">
@@ -310,7 +453,39 @@ const PINDashboard = () => {
                                 <span className="stat-number">{request.shortlistCount || 0}</span>
                                 <span className="stat-label">{t('common.shortlisted')}</span>
                               </div>
+                              {request.interestedVolunteers && request.interestedVolunteers.length > 0 && (
+                                <div className="stat-item highlight">
+                                  <span className="stat-icon">🙋</span>
+                                  <span className="stat-number">{request.interestedVolunteers.length}</span>
+                                  <span className="stat-label">{t('pin.dashboard.applicants') || '申请者'}</span>
+                                </div>
+                              )}
                             </div>
+
+                            {/* 显示已申请的志愿者 */}
+                            {request.interestedVolunteers && request.interestedVolunteers.length > 0 && request.status === 'pending' && (
+                              <div className="interested-volunteers-section">
+                                <h5 className="section-title">
+                                  <span>🙋</span> {t('pin.dashboard.interestedVolunteers') || '申请的志愿者'}
+                                </h5>
+                                <div className="volunteers-list">
+                                  {request.interestedVolunteers.map((volunteer, idx) => (
+                                    <div key={idx} className="volunteer-item">
+                                      <div className="volunteer-info">
+                                        <span className="volunteer-icon">👤</span>
+                                        <span className="volunteer-name">{volunteer.name}</span>
+                                      </div>
+                                      <button 
+                                        className="btn-select-volunteer"
+                                        onClick={() => handleSelectVolunteer(request.id, volunteer.id)}
+                                      >
+                                        {t('pin.dashboard.selectVolunteer') || '选择'}
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
 
                             {request.status === 'matched' && request.volunteer && (
                               <div className="matched-volunteer-card">
@@ -336,20 +511,36 @@ const PINDashboard = () => {
                               <span className="action-icon">👁️</span>
                               {t('common.view')}
                             </button>
-                            <button 
-                              className="pin-action-btn edit"
-                              onClick={() => handleEditRequest(request)}
-                            >
-                              <span className="action-icon">✏️</span>
-                              {t('common.edit')}
-                            </button>
-                            <button 
-                              className="pin-action-btn delete"
-                              onClick={() => handleDeleteRequest(request.id)}
-                            >
-                              <span className="action-icon">🗑️</span>
-                              {t('common.delete')}
-                            </button>
+                            
+                            {request.status === 'pending' && (
+                              <button 
+                                className="pin-action-btn edit"
+                                onClick={() => handleEditRequest(request)}
+                              >
+                                <span className="action-icon">✏️</span>
+                                {t('common.edit')}
+                              </button>
+                            )}
+                            
+                            {request.status === 'matched' && (
+                              <button 
+                                className="pin-action-btn complete"
+                                onClick={() => handleCompleteRequest(request.id)}
+                              >
+                                <span className="action-icon">✅</span>
+                                {t('pin.dashboard.complete') || '完成'}
+                              </button>
+                            )}
+                            
+                            {request.status === 'pending' && (
+                              <button 
+                                className="pin-action-btn delete"
+                                onClick={() => handleDeleteRequest(request.id)}
+                              >
+                                <span className="action-icon">🗑️</span>
+                                {t('common.delete')}
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -466,6 +657,77 @@ const PINDashboard = () => {
           request={showRequestDetail}
           onClose={() => setShowRequestDetail(null)}
         />
+      )}
+
+      {/* 评分对话框 */}
+      {showRatingModal && (
+        <div className="modal-overlay" onClick={() => setShowRatingModal(false)}>
+          <div className="modal-content rating-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{t('pin.dashboard.rateVolunteer') || '评价志愿者'}</h3>
+              <button className="close-btn" onClick={() => setShowRatingModal(false)}>✕</button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="rating-section">
+                <label className="form-label">
+                  {t('pin.dashboard.serviceRating') || '服务评分'}
+                  <span className="required">*</span>
+                </label>
+                <div className="star-rating">
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <button
+                      key={star}
+                      type="button"
+                      className={`star-btn ${star <= rating ? 'active' : ''}`}
+                      onClick={() => setRating(star)}
+                    >
+                      ★
+                    </button>
+                  ))}
+                  <span className="rating-text">
+                    {rating === 1 && (t('rating.poor') || '很差')}
+                    {rating === 2 && (t('rating.fair') || '一般')}
+                    {rating === 3 && (t('rating.good') || '良好')}
+                    {rating === 4 && (t('rating.veryGood') || '很好')}
+                    {rating === 5 && (t('rating.excellent') || '优秀')}
+                  </span>
+                </div>
+              </div>
+
+              <div className="feedback-section">
+                <label className="form-label">
+                  {t('pin.dashboard.feedback') || '评价反馈'}
+                  <span className="optional">({t('common.optional') || '可选'})</span>
+                </label>
+                <textarea
+                  className="feedback-textarea"
+                  placeholder={t('pin.dashboard.feedbackPlaceholder') || '分享您对志愿者服务的评价和建议...'}
+                  value={feedback}
+                  onChange={(e) => setFeedback(e.target.value)}
+                  rows={4}
+                  maxLength={500}
+                />
+                <div className="char-count">{feedback.length}/500</div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button 
+                className="btn btn-secondary"
+                onClick={() => setShowRatingModal(false)}
+              >
+                {t('common.cancel') || '取消'}
+              </button>
+              <button 
+                className="btn btn-primary"
+                onClick={submitCompleteRequest}
+              >
+                {t('pin.dashboard.submitRating') || '提交评价'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

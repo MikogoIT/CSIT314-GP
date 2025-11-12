@@ -130,7 +130,7 @@ const Reports = () => {
         ReportService.exportReport(reportData, 'system_report');
       } catch (error) {
         console.error('下载报告失败:', error);
-        alert('下载报告失败，请重试');
+        alert(t('admin.reports.downloadError'));
       }
     }
   };
@@ -166,16 +166,16 @@ const Reports = () => {
             <div className="header-icon">📊</div>
             <div className="header-text">
               <h1 className="modern-title">
-                {t.reports || '数据报告'}
+                {t('admin.reports.title')}
               </h1>
               <div className="report-type-badge">
-                {reportType === 'daily' ? (t.dailyReport || '日报') :
-                 reportType === 'weekly' ? (t.weeklyReport || '周报') :
-                 (t.monthlyReport || '月报')}
+                {reportType === 'daily' ? t('admin.reports.daily') :
+                 reportType === 'weekly' ? t('admin.reports.weekly') :
+                 t('admin.reports.monthly')}
               </div>
             </div>
           </div>
-          <p className="modern-subtitle">{t.systemDataAnalysis || '系统运行数据统计与分析'}</p>
+          <p className="modern-subtitle">{t('admin.reports.systemDataAnalysis')}</p>
         </div>
       </div>
 
@@ -183,10 +183,10 @@ const Reports = () => {
         <div className="config-header">
           <div className="config-title">
             <span className="config-icon">⚙️</span>
-            <h3>{t.reportConfiguration || '报告配置'}</h3>
+            <h3>{t('admin.reports.config')}</h3>
           </div>
           <div className="config-description">
-            {t.configDescription || '选择报告类型和时间范围来生成详细的数据分析报告'}
+            {t('configDescription')}
           </div>
         </div>
         
@@ -196,16 +196,16 @@ const Reports = () => {
               <div className="config-item">
                 <div className="item-header">
                   <span className="item-icon">📋</span>
-                  <label className="item-label">{t.reportType || '报告类型'}</label>
+                  <label className="item-label">{t('admin.reports.reportType')}</label>
                 </div>
                 <select 
                   className="config-select"
                   value={reportType} 
                   onChange={(e) => handleReportTypeChange(e.target.value)}
                 >
-                  <option value="daily">{t.dailyReport || '日报'}</option>
-                  <option value="weekly">{t.weeklyReport || '周报'}</option>
-                  <option value="monthly">{t.monthlyReport || '月报'}</option>
+                  <option value="daily">{t('admin.reports.daily')}</option>
+                  <option value="weekly">{t('admin.reports.weekly')}</option>
+                  <option value="monthly">{t('admin.reports.monthly')}</option>
                 </select>
               </div>
 
@@ -213,9 +213,9 @@ const Reports = () => {
                 <div className="item-header">
                   <span className="item-icon">📅</span>
                   <label className="item-label">
-                    {reportType === 'daily' ? (t.selectDate || '选择日期') :
-                     reportType === 'weekly' ? (t.selectWeek || '选择周') :
-                     (t.selectMonth || '选择月份')}
+                    {reportType === 'daily' ? t('selectDate') :
+                     reportType === 'weekly' ? t('selectWeek') :
+                     t('selectMonth')}
                   </label>
                 </div>
                 <div className="date-input-container">
@@ -236,7 +236,7 @@ const Reports = () => {
                         onChange={(e) => setReportDate(e.target.value)}
                       />
                       <small className="input-help">
-                        {t.weekHelp || '选择要查看的周'}
+                        {t('weekHelp')}
                       </small>
                     </>
                   )}
@@ -249,7 +249,7 @@ const Reports = () => {
                         onChange={(e) => setReportDate(e.target.value)}
                       />
                       <small className="input-help">
-                        {t.monthHelp || '选择要查看的月份'}
+                        {t('monthHelp')}
                       </small>
                     </>
                   )}
@@ -268,7 +268,7 @@ const Reports = () => {
                 {loading ? '⏳' : '📊'}
               </span>
               <span className="btn-text">
-                {loading ? (t.generating || '生成中...') : (t.generateReport || '生成报告')}
+                {loading ? t('admin.reports.generating') : t('admin.reports.generate')}
               </span>
             </button>
             
@@ -278,7 +278,7 @@ const Reports = () => {
                 onClick={downloadReport}
               >
                 <span className="btn-icon">💾</span>
-                <span className="btn-text">{t.downloadReport || '下载报告'}</span>
+                <span className="btn-text">{t('admin.reports.download')}</span>
               </button>
             )}
           </div>
@@ -291,10 +291,10 @@ const Reports = () => {
             <div className="card-body">
               <div className="report-info">
                 <div className="report-period">
-                  <strong>{t.reportPeriod || '报告周期'}:</strong> {formatDateRangeDisplay(reportData.dateRange, reportType)}
+                  <strong>{t('reportPeriod')}:</strong> {formatDateRangeDisplay(reportData.dateRange, reportType)}
                 </div>
                 <div className="report-generated">
-                  <strong>{t.generatedAt || '生成时间'}:</strong> {new Date().toLocaleString()}
+                  <strong>{t('generatedAt')}:</strong> {new Date().toLocaleString()}
                 </div>
               </div>
             </div>
@@ -304,60 +304,60 @@ const Reports = () => {
           <div className="stat-card primary">
             <div className="stat-header">
               <div className="stat-info">
-                <div className="stat-title">{t.totalMatches || '总匹配数'}</div>
+                <div className="stat-title">{t('admin.reports.totalMatches')}</div>
                 <div className="stat-value">{reportData.totalMatches}</div>
               </div>
               <div className="stat-icon primary">🤝</div>
             </div>
             <div className={`stat-change ${reportData.trends.matchGrowth >= 0 ? 'up' : 'down'}`}>
               {reportData.trends.matchGrowth >= 0 ? '↗' : '↘'} 
-              {reportType === 'daily' ? (t.dailyGrowth || '较昨日') : 
-               reportType === 'weekly' ? (t.weeklyGrowth || '较上周') : 
-               (t.monthlyGrowth || '较上月')} 
-              {reportData.trends.matchGrowth >= 0 ? (t.growth || '增长') : (t.decrease || '下降')} {Math.abs(reportData.trends.matchGrowth)}%
+              {reportType === 'daily' ? t('dailyGrowth') : 
+               reportType === 'weekly' ? t('weeklyGrowth') : 
+               t('monthlyGrowth')} 
+              {reportData.trends.matchGrowth >= 0 ? t('growth') : t('decrease')} {Math.abs(reportData.trends.matchGrowth)}%
             </div>
           </div>
 
           <div className="stat-card success">
             <div className="stat-header">
               <div className="stat-info">
-                <div className="stat-title">{t.newUsers || '新注册用户'}</div>
+                <div className="stat-title">{t('admin.reports.newUsers')}</div>
                 <div className="stat-value">{reportData.newUsers}</div>
               </div>
               <div className="stat-icon success">👥</div>
             </div>
             <div className={`stat-change ${reportData.trends.userGrowth >= 0 ? 'up' : 'down'}`}>
               {reportData.trends.userGrowth >= 0 ? '↗' : '↘'} 
-              {reportType === 'daily' ? (t.dailyGrowth || '较昨日') : 
-               reportType === 'weekly' ? (t.weeklyGrowth || '较上周') : 
-               (t.monthlyGrowth || '较上月')} 
-              {reportData.trends.userGrowth >= 0 ? (t.growth || '增长') : (t.decrease || '下降')} {Math.abs(reportData.trends.userGrowth)}%
+              {reportType === 'daily' ? t('dailyGrowth') : 
+               reportType === 'weekly' ? t('weeklyGrowth') : 
+               t('monthlyGrowth')} 
+              {reportData.trends.userGrowth >= 0 ? t('growth') : t('decrease')} {Math.abs(reportData.trends.userGrowth)}%
             </div>
           </div>
 
           <div className="stat-card warning">
             <div className="stat-header">
               <div className="stat-info">
-                <div className="stat-title">{t.activeRequests || '活跃请求'}</div>
+                <div className="stat-title">{t('admin.reports.activeRequests')}</div>
                 <div className="stat-value">{reportData.activeRequests}</div>
               </div>
               <div className="stat-icon warning">📋</div>
             </div>
             <div className="stat-change neutral">
-              {t.currentActive || '当前活跃'}
+              {t('admin.reports.currentActive')}
             </div>
           </div>
 
           <div className="stat-card info">
             <div className="stat-header">
               <div className="stat-info">
-                <div className="stat-title">{t.completionRate || '完成率'}</div>
+                <div className="stat-title">{t('admin.reports.completionRate')}</div>
                 <div className="stat-value">{reportData.completionRate}</div>
               </div>
               <div className="stat-icon info">✅</div>
             </div>
             <div className="stat-change neutral">
-              {t.periodCompletion || '周期完成率'}
+              {t('admin.reports.periodCompletion')}
             </div>
           </div>
         </div>
@@ -368,7 +368,7 @@ const Reports = () => {
         <>
           <div className="card">
             <div className="card-header">
-              <h3 className="card-title">{t.categoryBreakdown || '分类统计'}</h3>
+              <h3 className="card-title">{t('admin.reports.categoryBreakdown')}</h3>
             </div>
             <div className="card-body">
               <div className="category-stats">
@@ -376,7 +376,7 @@ const Reports = () => {
                   <div key={categoryId} className="category-stat-item">
                     <div className="category-info">
                       <span className="category-name">{data.name}</span>
-                      <span className="category-count">{data.count} {t.requests || '请求'}</span>
+                      <span className="category-count">{data.count} {t('admin.reports.requests')}</span>
                     </div>
                     <div className="category-progress">
                       <div 
@@ -387,7 +387,7 @@ const Reports = () => {
                       ></div>
                     </div>
                     <span className="match-rate">
-                      {data.count > 0 ? Math.round((data.matched / data.count) * 100) : 0}% {t.matched || '已匹配'}
+                      {data.count > 0 ? Math.round((data.matched / data.count) * 100) : 0}% {t('admin.reports.matched')}
                     </span>
                   </div>
                 ))}
@@ -398,7 +398,7 @@ const Reports = () => {
           {reportData.details.topPerformers && reportData.details.topPerformers.length > 0 && (
             <div className="card">
               <div className="card-header">
-                <h3 className="card-title">{t.topPerformers || '优秀志愿者'}</h3>
+                <h3 className="card-title">{t('admin.reports.topPerformers')}</h3>
               </div>
               <div className="card-body">
                 <div className="performers-list">
@@ -408,8 +408,8 @@ const Reports = () => {
                       <div className="performer-info">
                         <div className="performer-name">{performer.name}</div>
                         <div className="performer-stats">
-                          {performer.matches} {t.matches || '次匹配'} • 
-                          {performer.categories.length} {t.categories || '个分类'}
+                          {performer.matches} {t('admin.reports.matches')} • 
+                          {performer.categories.length} {t('admin.reports.categories')}
                         </div>
                       </div>
                     </div>
@@ -421,38 +421,38 @@ const Reports = () => {
 
           <div className="card">
             <div className="card-header">
-              <h3 className="card-title">{t.systemInfo || '系统信息'}</h3>
+              <h3 className="card-title">{t('admin.reports.systemInfo')}</h3>
             </div>
             <div className="card-body">
               <div className="system-info-grid">
                 <div className="info-item">
-                  <span className="info-label">{t.reportType || '报告类型'}</span>
+                  <span className="info-label">{t('admin.reports.reportType')}</span>
                   <span className="info-value">{reportData.reportType}</span>
                 </div>
                 <div className="info-item">
-                  <span className="info-label">{t.dateRange || '时间范围'}</span>
-                  <span className="info-value">{formatDateRangeDisplay(reportData.dateRange, reportType)}</span>
+                  <span className="info-label">{t('admin.reports.dateRange')}</span>
+                  <span className="info-value">{reportData.dateRange}</span>
                 </div>
                 <div className="info-item">
-                  <span className="info-label">{t.generatedAt || '生成时间'}</span>
+                  <span className="info-label">{t('generatedAt')}</span>
                   <span className="info-value">
-                    {new Date(reportData.generatedAt).toLocaleString(currentLanguage === 'zh' ? 'zh-CN' : 'en-US')}
+                    {new Date(reportData.generatedAt).toLocaleString()}
                   </span>
                 </div>
                 <div className="info-item">
-                  <span className="info-label">{t.totalUsers || '总用户数'}</span>
+                  <span className="info-label">{t('admin.reports.totalUsers')}</span>
                   <span className="info-value">{reportData.systemInfo.totalUsers}</span>
                 </div>
                 <div className="info-item">
-                  <span className="info-label">{t.totalRequests || '总请求数'}</span>
+                  <span className="info-label">{t('admin.reports.totalRequests')}</span>
                   <span className="info-value">{reportData.systemInfo.totalRequests}</span>
                 </div>
                 <div className="info-item">
-                  <span className="info-label">{t.systemHealth || '系统状态'}</span>
+                  <span className="info-label">{t('admin.reports.systemHealth')}</span>
                   <span className="info-value status-good">
                     {reportData.systemInfo.systemHealth === 'good' ? 
-                      (t.healthy || '良好') : 
-                      (t.needsAttention || '需要关注')
+                      t('admin.reports.healthy') : 
+                      t('admin.reports.needsAttention')
                     }
                   </span>
                 </div>

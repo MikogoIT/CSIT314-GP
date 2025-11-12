@@ -1,10 +1,6 @@
-// 统一数据服务 - 现在使用后端API而不是localStorage
-// src/services/dataService.js
-
 import apiService from './apiService';
 
 export class DataService {
-  // 缓存数据
   static cache = {
     categories: null,
     users: null,
@@ -13,22 +9,18 @@ export class DataService {
     lastFetch: {}
   };
 
-  // 缓存有效期（5分钟）
   static CACHE_DURATION = 5 * 60 * 1000;
 
-  // 检查缓存是否有效
   static isCacheValid(key) {
     const lastFetch = this.cache.lastFetch[key];
     return lastFetch && (Date.now() - lastFetch) < this.CACHE_DURATION;
   }
 
-  // 更新缓存
   static updateCache(key, data) {
     this.cache[key] = data;
     this.cache.lastFetch[key] = Date.now();
   }
 
-  // 清空缓存
   static clearCache(key = null) {
     if (key) {
       this.cache[key] = null;
@@ -44,27 +36,23 @@ export class DataService {
     }
   }
 
-  // 分类数据
   static async getCategories() {
     try {
-      // 检查缓存
       if (this.isCacheValid('categories') && this.cache.categories) {
         return this.cache.categories;
       }
 
       const categories = await apiService.getCategories();
       
-      // 确保categories是数组
       if (!Array.isArray(categories)) {
-        throw new Error('获取的分类数据格式不正确');
+        throw new Error('Invalid category data format');
       }
       
-      // 转换数据格式以兼容现有代码
       const formattedCategories = categories.map(cat => ({
         id: cat.name || cat._id,
-        _id: cat._id, // 保留 MongoDB _id 用于删除等操作
-        name: cat.name, // 保留原始 name 字段
-        displayName: cat.displayName, // 保留 displayName 用于显示
+        _id: cat._id,
+        name: cat.name,
+        displayName: cat.displayName,
         icon: cat.icon || '📁',
         color: this.getColorFromHex(cat.color || '#42a5f5')
       }));
@@ -72,23 +60,22 @@ export class DataService {
       this.updateCache('categories', formattedCategories);
       return formattedCategories;
     } catch (error) {
-      console.error('获取分类失败，使用默认数据:', error);
-      // 使用默认数据作为后备
+      console.error('Failed to load categories, using defaults:', error);
       const defaultCategories = [
-        { id: 'medical', name: 'category.medical', icon: '🏥' },
-        { id: 'transportation', name: 'category.transport', icon: '🚗' },
-        { id: 'shopping', name: 'category.shopping', icon: '🛒' },
-        { id: 'household', name: 'category.household', icon: '🏠' },
-        { id: 'companion', name: 'category.companion', icon: '👥' },
-        { id: 'technology', name: 'category.technology', icon: '💻' },
-        { id: 'education', name: 'category.education', icon: '📚' },
-        { id: 'other', name: 'category.other', icon: '📝' }
+        { id: 'medical', name: 'medical', displayName: 'Medical', icon: '🏥', color: 'danger' },
+        { id: 'transportation', name: 'transportation', displayName: 'Transportation', icon: '🚗', color: 'primary' },
+        { id: 'shopping', name: 'shopping', displayName: 'Shopping', icon: '🛒', color: 'warning' },
+        { id: 'household', name: 'household', displayName: 'Household', icon: '🏠', color: 'success' },
+        { id: 'companion', name: 'companion', displayName: 'Companion', icon: '👥', color: 'info' },
+        { id: 'technology', name: 'technology', displayName: 'Technology', icon: '💻', color: 'secondary' },
+        { id: 'education', name: 'education', displayName: 'Education', icon: '📚', color: 'primary' },
+        { id: 'other', name: 'other', displayName: 'Other', icon: '📝', color: 'default' }
       ];
+      this.updateCache('categories', defaultCategories);
       return defaultCategories;
     }
   }
 
-  // 将十六进制颜色转换为语义化颜色名
   static getColorFromHex(hexColor) {
     const colorMap = {
       '#ff4757': 'danger',
@@ -101,7 +88,6 @@ export class DataService {
     return colorMap[hexColor] || 'primary';
   }
 
-  // 紧急程度数据（静态数据，无需API）
   static getUrgencyLevels() {
     return [
       { id: 'low', name: 'urgency.low', color: 'success' },
@@ -111,7 +97,6 @@ export class DataService {
     ];
   }
 
-  // 状态数据（静态数据，无需API）
   static getStatusOptions() {
     return [
       { id: 'pending', name: 'status.pending', color: 'warning' },
@@ -121,10 +106,14 @@ export class DataService {
     ];
   }
 
-  // 获取用户数据
   static async getUsers() {
     try {
-      // 检查缓存
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      if (currentUser.userType !== 'system_admin' && currentUser.userType !== 'platform_manager') {
+        console.warn('getUsers() requires admin permissions');
+        return [];
+      }
+
       if (this.isCacheValid('users') && this.cache.users) {
         return this.cache.users;
       }
@@ -133,25 +122,21 @@ export class DataService {
       this.updateCache('users', users);
       return users;
     } catch (error) {
-      console.error('获取用户数据失败:', error);
+      console.error('Failed to load users:', error);
       return [];
     }
   }
 
-  // 获取请求数据
   static async getRequests() {
     try {
-      // 检查缓存
       if (this.isCacheValid('requests') && this.cache.requests) {
         return this.cache.requests;
       }
 
-      // 检查用户类型，管理员使用不同的API
       const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
       let requests = [];
       
       if (currentUser.userType === 'system_admin' || currentUser.userType === 'platform_manager') {
-        // 管理员使用getAllRequests获取所有请求
         const allRequests = await apiService.getAllRequests();
         requests = allRequests || [];
       } else {
@@ -175,6 +160,23 @@ export class DataService {
           feedback: av.feedback
         }));
         
+        const interestedVolunteers = req.interestedVolunteers || [];
+        const interestedList = interestedVolunteers.map(iv => ({
+          id: iv.volunteer?._id || iv.volunteer,
+          name: iv.volunteer?.name || 'Unknown',
+          email: iv.volunteer?.email,
+          phone: iv.volunteer?.phone,
+          message: iv.message,
+          appliedAt: iv.appliedAt
+        }));
+        
+        const rejectedVolunteers = req.rejectedVolunteers || [];
+        const rejectedList = rejectedVolunteers.map(rv => ({
+          volunteer: rv.volunteer?._id || rv.volunteer,
+          rejectedAt: rv.rejectedAt,
+          reason: rv.reason
+        }));
+        
         return {
           id: req._id,
           title: req.title,
@@ -186,13 +188,13 @@ export class DataService {
           expectedTime: req.expectedTime,
           volunteersNeeded: req.volunteersNeeded,
           status: req.status,
-          // Requester information
           requesterId: req.requester?._id || req.requesterId || req.requester,
           requesterName: req.requester?.name || req.requesterId?.name || req.requesterName || 'Unknown',
           requesterEmail: req.requester?.email || req.requesterId?.email || req.requesterEmail,
           requesterPhone: req.requester?.phone || req.requesterId?.phone || req.requesterPhone,
           requesterAddress: req.requester?.address || req.requesterId?.address || req.requesterAddress,
-          // Assigned volunteers information
+          interestedVolunteers: interestedList,
+          rejectedVolunteers: rejectedList,
           assignedVolunteers: volunteersList,
           volunteer: volunteersList.length > 0 ? volunteersList[0].name : (req.assignedVolunteer?.name || req.volunteer),
           volunteerEmail: volunteersList.length > 0 ? volunteersList[0].email : null,
@@ -207,20 +209,27 @@ export class DataService {
       this.updateCache('requests', formattedRequests);
       return formattedRequests;
     } catch (error) {
-      console.error('获取请求数据失败:', error);
+      console.error('Failed to load requests:', error);
       return [];
     }
   }
 
-  // 获取收藏夹数据
+  static async getRequestById(requestId) {
+    try {
+      const response = await apiService.getRequestById(requestId);
+      return response.request || response;
+    } catch (error) {
+      console.error('Failed to load request details:', error);
+      throw error;
+    }
+  }
+
   static async getShortlists() {
     try {
-      // 检查缓存
       if (this.isCacheValid('shortlists') && this.cache.shortlists) {
         return this.cache.shortlists;
       }
 
-      // 从localStorage获取所有用户的收藏夹数据
       const allShortlists = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -239,136 +248,140 @@ export class DataService {
       this.updateCache('shortlists', allShortlists);
       return allShortlists;
     } catch (error) {
-      console.error('获取收藏夹数据失败:', error);
+      console.error('Failed to load shortlists:', error);
       return [];
     }
   }
 
-  // 保存分类数据
   static async saveCategories(categories) {
     try {
-      // 注意：这里需要管理员权限
       await apiService.updateCategory(categories);
       this.clearCache('categories');
     } catch (error) {
-      console.error('保存分类数据失败:', error);
+      console.error('Failed to save categories:', error);
       throw error;
     }
   }
 
-  // 保存用户数据
   static async saveUsers(users) {
     try {
-      // 注意：这里需要管理员权限
-      // 实际实现中，用户数据通常不会批量保存
       this.clearCache('users');
     } catch (error) {
-      console.error('保存用户数据失败:', error);
+      console.error('Failed to save users:', error);
       throw error;
     }
   }
 
-  // 保存请求数据
   static async saveRequests(requests) {
     try {
-      // 注意：通常不会批量保存请求，而是单个创建/更新
       this.clearCache('requests');
     } catch (error) {
-      console.error('保存请求数据失败:', error);
+      console.error('Failed to save requests:', error);
       throw error;
     }
   }
 
-  // 保存收藏夹数据
   static async saveShortlists(shortlists) {
     try {
-      // 注意：通常不会批量保存收藏夹
       this.clearCache('shortlists');
     } catch (error) {
-      console.error('保存收藏夹数据失败:', error);
+      console.error('Failed to save shortlists:', error);
       throw error;
     }
   }
 
-  // 根据分类ID获取分类名称
   static async getCategoryById(categoryId) {
     try {
       const categories = await this.getCategories();
       const category = categories.find(cat => cat.id === categoryId);
       return category || { id: categoryId, name: 'category.other', icon: '📝' };
     } catch (error) {
-      console.error('获取分类失败:', error);
+      console.error('Failed to get category:', error);
       return { id: categoryId, name: 'category.other', icon: '📝' };
     }
   }
 
-  // 根据紧急程度ID获取紧急程度
   static getUrgencyById(urgencyId) {
     const urgencyLevels = this.getUrgencyLevels();
     return urgencyLevels.find(level => level.id === urgencyId) || 
            { id: urgencyId, name: 'urgency.medium', color: 'warning' };
   }
 
-  // 根据状态ID获取状态
   static getStatusById(statusId) {
     const statuses = this.getStatusOptions();
     return statuses.find(status => status.id === statusId) || 
            { id: statusId, name: 'status.pending', color: 'warning' };
   }
 
-  // 获取用户的请求
   static async getUserRequests(userId) {
     try {
       const requests = await apiService.getUserRequests(userId);
       
+      console.log('DataService - Original request data:', requests);
+      
       if (!Array.isArray(requests)) {
-        console.error('获取的请求数据不是数组:', requests);
+        console.error('Request data is not an array:', requests);
         return [];
       }
       
-      const mappedRequests = requests.map(req => ({
-        id: req._id,
-        title: req.title,
-        description: req.description,
-        category: req.category,
-        urgency: req.urgency,
-        location: req.location?.address || req.location,
-        expectedDate: req.expectedDate ? new Date(req.expectedDate).toISOString().split('T')[0] : null,
-        expectedTime: req.expectedTime,
-        volunteersNeeded: req.volunteersNeeded,
-        status: req.status,
-        contactMethod: req.contactMethod,
-        additionalNotes: req.additionalNotes,
-        requesterId: req.requester?._id || req.requesterId,
-        requesterName: req.requester?.name || req.requesterName,
-        requesterEmail: req.requester?.email || req.requesterEmail,
-        requesterPhone: req.requester?.phone || req.requesterPhone,
-        volunteer: req.assignedVolunteers?.[0]?.volunteer?.name || req.volunteer,
-        viewCount: req.stats?.viewCount || req.viewCount || 0,
-        shortlistCount: req.stats?.shortlistCount || req.shortlistCount || 0,
-        createdAt: req.createdAt,
-        matchedAt: req.matchedAt
-      }));
+      const mappedRequests = requests.map(req => {
+        const interestedVolunteers = req.interestedVolunteers || [];
+        console.log(`Request ${req._id} - interestedVolunteers:`, interestedVolunteers);
+        
+        const interestedList = interestedVolunteers.map(iv => ({
+          id: iv.volunteer?._id || iv.volunteer,
+          name: iv.volunteer?.name || 'Unknown',
+          email: iv.volunteer?.email,
+          phone: iv.volunteer?.phone,
+          message: iv.message,
+          appliedAt: iv.appliedAt
+        }));
+        
+        console.log(`Request ${req._id} - 处理后的申请者:`, interestedList);
+        
+        return {
+          id: req._id,
+          title: req.title,
+          description: req.description,
+          category: req.category,
+          urgency: req.urgency,
+          location: req.location?.address || req.location,
+          expectedDate: req.expectedDate ? new Date(req.expectedDate).toISOString().split('T')[0] : null,
+          expectedTime: req.expectedTime,
+          volunteersNeeded: req.volunteersNeeded,
+          status: req.status,
+          contactMethod: req.contactMethod,
+          additionalNotes: req.additionalNotes,
+          requesterId: req.requester?._id || req.requesterId,
+          requesterName: req.requester?.name || req.requesterName,
+          requesterEmail: req.requester?.email || req.requesterEmail,
+          requesterPhone: req.requester?.phone || req.requesterPhone,
+          volunteer: req.assignedVolunteers?.[0]?.volunteer?.name || req.volunteer,
+          interestedVolunteers: interestedList,
+          viewCount: req.stats?.viewCount || req.viewCount || 0,
+          shortlistCount: req.stats?.shortlistCount || req.shortlistCount || 0,
+          createdAt: req.createdAt,
+          matchedAt: req.matchedAt
+        };
+      });
       
       return mappedRequests;
     } catch (error) {
-      console.error('获取用户请求失败:', error);
+      console.error('Failed to load user requests:', error);
       return [];
     }
   }
 
-  // 获取用户的收藏夹
   static async getUserShortlists(userId) {
     try {
       const savedShortlist = localStorage.getItem(`shortlist_${userId}`);
       return savedShortlist ? JSON.parse(savedShortlist) : [];
     } catch (error) {
-      console.error('获取用户收藏夹失败:', error);
+      console.error('Failed to load user shortlists:', error);
       return [];
     }
   }
 
-  // 时间格式化工具
   static getTimeAgo(dateString, t = null) {
     if (!dateString) return t ? t('common.unknown') : '未知';
     
@@ -398,28 +411,22 @@ export class DataService {
     return t ? t('time.weeksAgo', { count: diffInWeeks }) : `${diffInWeeks}周前`;
   }
 
-  // 初始化示例数据（现在通过数据库脚本完成）
   static async initializeData() {
     try {
-      // 检查数据库是否已有数据
-      const users = await this.getUsers();
       const requests = await this.getRequests();
       
-      if (users.length === 0 || requests.length === 0) {
-        console.warn('数据库中没有足够的数据。请运行后端的数据库初始化脚本：');
-        console.warn('cd backend && node init-database.js');
-        console.warn('或者使用 npm run init-db 命令');
+      if (requests.length === 0) {
+        console.warn('No data in database. Please run backend initialization script:');
+        console.warn('cd backend && node generate-test-data.js');
+        console.warn('or use: npm run generate-data');
       }
     } catch (error) {
-      console.error('检查数据库数据失败:', error);
-      console.warn('请确保后端服务正在运行，并初始化数据库数据');
+      console.error('Failed to check database data:', error);
     }
   }
 
-  // 搜索和过滤功能
   static filterRequests(requests, filters) {
     return requests.filter(request => {
-      // 搜索文本过滤
       if (filters.searchText) {
         const searchLower = filters.searchText.toLowerCase();
         const matchesText = 
@@ -448,7 +455,6 @@ export class DataService {
     });
   }
 
-  // 获取统计数据
   static async getStatistics(userId = null) {
     try {
       const users = await this.getUsers();
@@ -456,7 +462,6 @@ export class DataService {
       const shortlists = await this.getShortlists();
 
       if (userId) {
-        // 用户个人统计
         const userRequests = requests.filter(r => r.requesterId === userId);
         const userShortlists = shortlists.filter(s => s.userId === userId);
         
@@ -469,7 +474,6 @@ export class DataService {
           totalShortlists: userShortlists.length
         };
       } else {
-        // 系统整体统计
         return {
           totalUsers: users.length,
           activeUsers: users.filter(u => u.status === 'active').length,
@@ -481,7 +485,7 @@ export class DataService {
         };
       }
     } catch (error) {
-      console.error('获取统计数据失败:', error);
+      console.error('Failed to load statistics:', error);
       return {
         totalUsers: 0,
         activeUsers: 0,
@@ -494,17 +498,17 @@ export class DataService {
     }
   }
 
-  // 创建新请求
   static async createRequest(requestData) {
     try {
-      let newRequest;
-      // If attachments (File objects) exist, use multipart upload
+      let result;
       if (requestData.attachments && requestData.attachments.length) {
-        newRequest = await apiService.createRequestWithFiles(requestData);
+        result = await apiService.createRequestWithFiles(requestData);
       } else {
-        newRequest = await apiService.createRequest(requestData);
+        result = await apiService.createRequest(requestData);
       }
       this.clearCache('requests');
+      
+      const newRequest = result.request || result;
       
       return {
         id: newRequest._id,
@@ -521,19 +525,18 @@ export class DataService {
         createdAt: newRequest.createdAt
       };
     } catch (error) {
-      console.error('创建请求失败:', error);
+      console.error('Failed to create request:', error);
       throw error;
     }
   }
 
-  // 更新请求
   static async updateRequest(requestId, updateData) {
     try {
       const updatedRequest = await apiService.updateRequest(requestId, updateData);
       this.clearCache('requests');
       return updatedRequest;
     } catch (error) {
-      console.error('更新请求失败:', error);
+      console.error('Failed to update request:', error);
       throw error;
     }
   }
@@ -544,53 +547,103 @@ export class DataService {
       await apiService.deleteRequest(requestId);
       this.clearCache('requests');
     } catch (error) {
-      console.error('删除请求失败:', error);
+      console.error('Failed to delete request:', error);
       throw error;
     }
   }
 
-  // 添加到收藏夹
+  static async completeRequest(requestId, update = {}) {
+    try {
+      const response = await apiService.completeRequest(requestId, update);
+      this.clearCache('requests');
+      return response;
+    } catch (error) {
+      console.error('Failed to complete request:', error);
+      throw error;
+    }
+  }
+
+  static async matchRequest(requestId, volunteerId) {
+    try {
+      const response = await apiService.matchRequest(requestId, volunteerId);
+      this.clearCache('requests');
+      return response;
+    } catch (error) {
+      console.error('Failed to match volunteer:', error);
+      throw error;
+    }
+  }
+
+  static async applyForRequest(requestId, message = '') {
+    try {
+      const response = await apiService.applyForRequest(requestId, message);
+      this.clearCache('requests');
+      return response;
+    } catch (error) {
+      console.error('Failed to apply for request:', error);
+      throw error;
+    }
+  }
+
+  static async cancelApplication(requestId) {
+    try {
+      const response = await apiService.cancelApplication(requestId);
+      this.clearCache('requests');
+      return response;
+    } catch (error) {
+      console.error('Failed to cancel application:', error);
+      throw error;
+    }
+  }
+
+  static async rejectRequest(requestId, reason = '') {
+    try {
+      const response = await apiService.rejectRequest(requestId, reason);
+      this.clearCache('requests');
+      return response;
+    } catch (error) {
+      console.error('Failed to reject request:', error);
+      throw error;
+    }
+  }
+
   static async addToShortlist(requestId) {
     try {
       const result = await apiService.addToShortlist(requestId);
       this.clearCache('shortlists');
       return result;
     } catch (error) {
-      console.error('添加到收藏夹失败:', error);
+      console.error('Failed to add to shortlist:', error);
       throw error;
     }
   }
 
-  // 从收藏夹移除
   static async removeFromShortlist(requestId) {
     try {
       await apiService.removeFromShortlist(requestId);
       this.clearCache('shortlists');
     } catch (error) {
-      console.error('从收藏夹移除失败:', error);
+      console.error('Failed to remove from shortlist:', error);
       throw error;
     }
   }
 
-  // 根据分类获取请求
   static async getRequestsByCategory(categoryId) {
     try {
-      console.log('DataService.getRequestsByCategory 调用，categoryId:', categoryId);
+      console.log('DataService.getRequestsByCategory called, categoryId:', categoryId);
       
-      // 尝试直接通过API搜索
       const requests = await apiService.searchRequests({ category: categoryId });
-      console.log('API搜索结果:', requests);
+      console.log('API search result:', requests);
       
       if (!requests || requests.length === 0) {
-        // 如果API搜索没有结果，尝试获取所有请求然后本地过滤
-        console.log('API搜索无结果，尝试本地过滤');
+        console.log('No API results, trying local filter');
         const allRequests = await this.getRequests();
         const filteredRequests = (allRequests || []).filter(req => 
           req.category === categoryId || 
           req.category?.id === categoryId ||
           req.category?.name === categoryId
         );
-        console.log('本地过滤结果:', filteredRequests);
+        console.log('Local filter result:', filteredRequests);
         return filteredRequests;
       }
       
@@ -610,7 +663,7 @@ export class DataService {
         createdAt: req.createdAt
       }));
     } catch (error) {
-      console.error('获取分类请求失败:', error);
+      console.error('Failed to get category requests:', error);
       return [];
     }
   }

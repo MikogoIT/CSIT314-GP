@@ -287,8 +287,8 @@ const CSRDashboard = () => {
                     >
                       <option value="">{t('common.allCategories')}</option>
                       {categories.map(category => (
-                        <option key={category} value={category}>
-                          {t(`category.${category}`)}
+                        <option key={category.id || category.name} value={category.id || category.name}>
+                          {t(`category.${category.id || category.name}`)}
                         </option>
                       ))}
                     </select>

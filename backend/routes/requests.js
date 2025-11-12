@@ -169,7 +169,9 @@ router.get('/',
     const [requests, total] = await Promise.all([
       Request.find(query)
         .populate('requester', 'name email phone userType')
+        .populate('interestedVolunteers.volunteer', 'name email phone organization skills')
         .populate('assignedVolunteers.volunteer', 'name email phone organization')
+        .populate('rejectedVolunteers.volunteer', 'name email')
         .sort(sort)
         .skip(skip)
         .limit(parseInt(limit)),
@@ -194,11 +196,12 @@ router.get('/',
 // @desc    获取单个请求详情
 // @route   GET /api/requests/:id
 // @access  Private
-router.get('/:id', asyncHandler(async (req, res) => {
+router.get('/:id', authenticate, asyncHandler(async (req, res) => {
   const request = await Request.findById(req.params.id)
     .populate('requester', 'name email phone address userType')
     .populate('interestedVolunteers.volunteer', 'name email phone organization skills')
-    .populate('assignedVolunteers.volunteer', 'name email phone organization skills');
+    .populate('assignedVolunteers.volunteer', 'name email phone organization skills')
+    .populate('rejectedVolunteers.volunteer', 'name email');
 
   if (!request) {
     throw createError.notFound('请求未找到');
@@ -328,6 +331,7 @@ router.post('/',
 // @route   PUT /api/requests/:id
 // @access  Private (Owner or Admin)
 router.put('/:id', 
+  authenticate,
   [
     body('title').optional().trim().isLength({ min: 5, max: 200 }),
     body('description').optional().trim().isLength({ min: 10, max: 1000 }),
@@ -338,6 +342,11 @@ router.put('/:id',
   ],
   handleValidationErrors,
   asyncHandler(async (req, res) => {
+    // 验证ObjectId格式
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      throw createError.badRequest('无效的请求ID格式');
+    }
+
     const request = await Request.findById(req.params.id);
 
     if (!request) {
@@ -417,6 +426,7 @@ router.delete('/:id', authenticate, asyncHandler(async (req, res) => {
 // @route   POST /api/requests/:id/apply
 // @access  Private (CSR users only)
 router.post('/:id/apply',
+  authenticate,
   authorize('csr'),
   [
     body('message')
@@ -428,6 +438,11 @@ router.post('/:id/apply',
   handleValidationErrors,
   asyncHandler(async (req, res) => {
     const { message = '' } = req.body;
+    
+    // 验证ObjectId格式
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      throw createError.badRequest('无效的请求ID格式');
+    }
     
     const request = await Request.findById(req.params.id);
 
@@ -461,6 +476,7 @@ router.post('/:id/apply',
 // @route   DELETE /api/requests/:id/apply
 // @access  Private (CSR users only)
 router.delete('/:id/apply',
+  authenticate,
   authorize('csr'),
   asyncHandler(async (req, res) => {
     const request = await Request.findById(req.params.id);
@@ -483,10 +499,72 @@ router.delete('/:id/apply',
   })
 );
 
+// @desc    拒绝请求（CSR认为请求不在其职责范围内）
+// @route   POST /api/requests/:id/reject
+// @access  Private (CSR users only)
+router.post('/:id/reject',
+  authenticate,
+  authorize('csr'),
+  [
+    body('reason')
+      .optional()
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage('拒绝原因不能超过500个字符')
+  ],
+  handleValidationErrors,
+  asyncHandler(async (req, res) => {
+    const { reason = '' } = req.body;
+    
+    // 验证ObjectId格式
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      throw createError.badRequest('无效的请求ID格式');
+    }
+    
+    const request = await Request.findById(req.params.id);
+
+    if (!request) {
+      throw createError.notFound('请求未找到');
+    }
+
+    // 检查是否已经拒绝过
+    const hasRejected = request.rejectedVolunteers?.some(
+      rejection => rejection.volunteer.toString() === req.user._id.toString()
+    );
+
+    if (hasRejected) {
+      throw createError.conflict('您已经拒绝过这个请求');
+    }
+
+    // 如果CSR已经申请了这个请求，先移除申请
+    request.interestedVolunteers = request.interestedVolunteers.filter(
+      interest => interest.volunteer.toString() !== req.user._id.toString()
+    );
+
+    // 添加到拒绝列表
+    if (!request.rejectedVolunteers) {
+      request.rejectedVolunteers = [];
+    }
+    
+    request.rejectedVolunteers.push({
+      volunteer: req.user._id,
+      rejectedAt: new Date(),
+      reason: reason
+    });
+
+    await request.save();
+
+    res.json({
+      success: true,
+      message: '已拒绝该请求'
+    });
+  })
+);
+
 // @desc    分配志愿者（PIN用户选择志愿者）
 // @route   POST /api/requests/:id/assign/:volunteerId
 // @access  Private (Request owner or Admin)
-router.post('/:id/assign/:volunteerId', asyncHandler(async (req, res) => {
+router.post('/:id/assign/:volunteerId', authenticate, asyncHandler(async (req, res) => {
   const request = await Request.findById(req.params.id);
 
   if (!request) {
@@ -520,13 +598,15 @@ router.post('/:id/assign/:volunteerId', asyncHandler(async (req, res) => {
 // @route   POST /api/requests/:id/complete
 // @access  Private (Request owner or Admin)
 router.post('/:id/complete',
+  authenticate,
   [
     body('rating').optional().isInt({ min: 1, max: 5 }).withMessage('评分必须在1-5之间'),
-    body('feedback').optional().trim().isLength({ max: 500 }).withMessage('反馈不能超过500个字符')
+    body('feedback').optional().trim().isLength({ max: 500 }).withMessage('反馈不能超过500个字符'),
+    body('volunteerId').optional().isMongoId().withMessage('无效的志愿者ID')
   ],
   handleValidationErrors,
   asyncHandler(async (req, res) => {
-    const { rating, feedback, actualDuration } = req.body;
+    const { rating, feedback, actualDuration, volunteerId } = req.body;
     
     const request = await Request.findById(req.params.id);
 
@@ -550,16 +630,63 @@ router.post('/:id/complete',
     });
 
     // 更新统计信息
-    await Promise.all([
-      User.findByIdAndUpdate(request.requester, {
+      // 增加请求者已完成请求计数
+      await User.findByIdAndUpdate(request.requester, {
         $inc: { 'stats.completedRequests': 1 }
-      }),
-      ...request.assignedVolunteers.map(assignment => 
-        User.findByIdAndUpdate(assignment.volunteer, {
-          $inc: { 'stats.completedServices': 1 }
-        })
-      )
-    ]);
+      });
+
+      // 为每个已分配的志愿者更新完成次数，并记录评分/反馈（如果提供）
+      for (const assignment of request.assignedVolunteers) {
+        try {
+          // 更新志愿者统计的完成服务计数
+          await User.findByIdAndUpdate(assignment.volunteer, {
+            $inc: { 'stats.completedServices': 1 }
+          });
+
+          // 如果评价存在，把评价写入 assignment，并更新用户平均评分
+          if (typeof rating !== 'undefined' && rating !== null) {
+            // 如果指定了 volunteerId，则只为该志愿者记录评分
+            if (!volunteerId || assignment.volunteer.toString() === volunteerId.toString()) {
+              // 写入到请求的分配条目
+              assignment.rating = rating;
+              if (feedback) assignment.feedback = feedback;
+
+              // 更新志愿者用户的评分统计（计算新的平均）
+              const volunteerUser = await User.findById(assignment.volunteer);
+              if (volunteerUser) {
+                const prevCount = volunteerUser.stats?.totalRatings || 0;
+                const prevAvg = volunteerUser.stats?.rating || 0;
+                const newCount = prevCount + 1;
+                const newAvg = ((prevAvg * prevCount) + rating) / newCount;
+
+                volunteerUser.stats = volunteerUser.stats || {};
+                volunteerUser.stats.totalRatings = newCount;
+                volunteerUser.stats.rating = Math.round(newAvg * 10) / 10; // keep one decimal
+                await volunteerUser.save();
+              }
+            }
+
+            // 更新志愿者用户的评分统计（计算新的平均）
+            const volunteerUser = await User.findById(assignment.volunteer);
+            if (volunteerUser) {
+              const prevCount = volunteerUser.stats?.totalRatings || 0;
+              const prevAvg = volunteerUser.stats?.rating || 0;
+              const newCount = prevCount + 1;
+              const newAvg = ((prevAvg * prevCount) + rating) / newCount;
+
+              volunteerUser.stats = volunteerUser.stats || {};
+              volunteerUser.stats.totalRatings = newCount;
+              volunteerUser.stats.rating = Math.round(newAvg * 10) / 10; // keep one decimal
+              await volunteerUser.save();
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to update volunteer stats for assignment', assignment, err);
+        }
+      }
+
+      // 如果我们修改了 assignment 的 rating/feedback，需要保存 request
+      await request.save();
 
     res.json({
       success: true,
@@ -572,6 +699,7 @@ router.post('/:id/complete',
 // @route   POST /api/requests/:id/cancel
 // @access  Private (Request owner or Admin)
 router.post('/:id/cancel',
+  authenticate,
   [
     body('reason')
       .trim()

@@ -1,4 +1,3 @@
-// 用户管理页面 - 仅 System Admin 可访问
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -19,7 +18,6 @@ const UserManagement = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showUserDetail, setShowUserDetail] = useState(false);
 
-  // 权限检查 - 只有 System Admin 可以访问
   useEffect(() => {
     if (!isSystemAdmin(user)) {
       alert(t('permission.denied') || 'Access Denied: System Admin only');

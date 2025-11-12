@@ -1,6 +1,3 @@
-// API数据服务 - 替代localStorage，使用后端API
-// src/services/apiService.js
-
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 class ApiService {
@@ -8,7 +5,6 @@ class ApiService {
     this.token = localStorage.getItem('token');
   }
 
-  // 设置认证token
   setToken(token) {
     this.token = token;
     if (token) {
@@ -18,7 +14,6 @@ class ApiService {
     }
   }
 
-  // 获取请求头
   getHeaders() {
     const headers = {
       'Content-Type': 'application/json',
@@ -31,7 +26,6 @@ class ApiService {
     return headers;
   }
 
-  // 基础请求方法
   async request(endpoint, options = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
     const config = {
@@ -54,9 +48,7 @@ class ApiService {
     }
   }
 
-  // GET请求
   async get(endpoint, options = {}) {
-    // 处理查询参数
     let url = endpoint;
     if (options.params) {
       const queryString = new URLSearchParams(options.params).toString();
@@ -65,7 +57,6 @@ class ApiService {
     return this.request(url, { method: 'GET' });
   }
 
-  // POST请求
   async post(endpoint, data) {
     return this.request(endpoint, {
       method: 'POST',
@@ -73,7 +64,6 @@ class ApiService {
     });
   }
 
-  // PUT请求
   async put(endpoint, data) {
     return this.request(endpoint, {
       method: 'PUT',
@@ -81,32 +71,26 @@ class ApiService {
     });
   }
 
-  // DELETE请求
   async delete(endpoint) {
     return this.request(endpoint, { method: 'DELETE' });
   }
 
-  // 用户相关API
   async getUsers() {
     const response = await this.get('/users');
     return response.data || [];
   }
 
   async getAllUsers(params = {}) {
-    // 管理员获取所有用户的方法
-    // 默认获取所有数据（limit=1000），除非指定了分页参数
     const queryParams = {
       limit: 1000,
       page: 1,
       ...params
     };
     const response = await this.get('/admin/users', { params: queryParams });
-    // 后端返回的是 { users: [...], pagination: {...} }
     return response.data?.users || [];
   }
 
   async batchUpdateUsers(action, userIds) {
-    // 批量操作用户：suspend, activate, delete
     const response = await this.post('/admin/users/batch', {
       action,
       userIds
@@ -133,7 +117,6 @@ class ApiService {
     await this.delete(`/users/${id}`);
   }
 
-  // 分类相关API
   async getCategories() {
     const response = await this.get('/categories');
     return response.data?.categories || [];
@@ -158,9 +141,7 @@ class ApiService {
     await this.delete(`/categories/${id}`);
   }
 
-  // 请求相关API
   async getRequests(params = {}) {
-    // 默认获取所有数据（limit=1000），除非指定了分页参数
     const queryParams = {
       limit: 1000,
       page: 1,
@@ -171,15 +152,12 @@ class ApiService {
   }
 
   async getAllRequests(params = {}) {
-    // 管理员获取所有请求的方法 - 使用通用的 /requests 端点
-    // 默认获取所有数据（limit=1000），除非指定了分页参数
     const queryParams = {
       limit: 1000,
       page: 1,
       ...params
     };
     const response = await this.get('/requests', { params: queryParams });
-    // 后端返回的是 { requests: [...], pagination: {...} }
     return response.data?.requests || [];
   }
 
@@ -193,25 +171,20 @@ class ApiService {
     return response.data;
   }
 
-  // Create request with file attachments (multipart/form-data)
   async createRequestWithFiles(requestData) {
     const url = `${API_BASE_URL}/requests`;
     const token = this.token;
 
     const formData = new FormData();
 
-    // helper to append nested fields using bracket notation (e.g. location[address]=...)
     const appendFormField = (key, value) => {
       if (value === undefined || value === null) return;
-      // Files (from browser File API) should be appended by caller
       if (value instanceof File) {
         formData.append(key, value);
         return;
       }
       if (typeof value === 'object' && !Array.isArray(value)) {
-        // flatten object
         Object.entries(value).forEach(([subKey, subValue]) => {
-          // for nested objects, stringify the inner object
           if (typeof subValue === 'object' && subValue !== null) {
             formData.append(`${key}[${subKey}]`, JSON.stringify(subValue));
           } else {
@@ -219,23 +192,19 @@ class ApiService {
           }
         });
       } else if (Array.isArray(value)) {
-        // append array items as key[]
         value.forEach(item => formData.append(`${key}[]`, typeof item === 'object' ? JSON.stringify(item) : item));
       } else {
         formData.append(key, value);
       }
     };
 
-    // Append non-file fields
     Object.entries(requestData).forEach(([key, value]) => {
-      if (key === 'attachments') return; // handle separately
+      if (key === 'attachments') return;
       appendFormField(key, value);
     });
 
-    // Append files
     if (requestData.attachments && requestData.attachments.length) {
       for (const file of requestData.attachments) {
-        // file may be a File object (browser) or an array entry already; append directly
         formData.append('attachments', file);
       }
     }
@@ -264,27 +233,35 @@ class ApiService {
   }
 
   async getUserRequests(userId) {
-    // 对于PIN用户，后端会自动过滤到只显示该用户的请求
-    // 不需要传递userId参数，因为后端从JWT token中获取用户信息
     const response = await this.get('/requests');
     return response.data?.requests || [];
   }
 
   async matchRequest(requestId, volunteerId) {
-    const response = await this.post(`/requests/${requestId}/match`, {
-      volunteerId
-    });
+    const response = await this.post(`/requests/${requestId}/assign/${volunteerId}`);
     return response.data;
   }
 
-  async completeRequest(requestId, feedback = null) {
-    const response = await this.post(`/requests/${requestId}/complete`, {
-      feedback
-    });
+  async completeRequest(requestId, payload = {}) {
+    const response = await this.post(`/requests/${requestId}/complete`, payload);
     return response.data;
   }
 
-  // 认证相关API
+  async applyForRequest(requestId, message = '') {
+    const response = await this.post(`/requests/${requestId}/apply`, { message });
+    return response;
+  }
+
+  async cancelApplication(requestId) {
+    const response = await this.delete(`/requests/${requestId}/apply`);
+    return response;
+  }
+
+  async rejectRequest(requestId, reason = '') {
+    const response = await this.post(`/requests/${requestId}/reject`, { reason });
+    return response;
+  }
+
   async login(loginData) {
     const response = await this.post('/auth/login', loginData);
     if (response.data && response.data.token) {
@@ -310,7 +287,6 @@ class ApiService {
     return response.data;
   }
 
-  // 管理员相关API
   async getAdminStats() {
     const response = await this.get('/admin/stats');
     return response.data;
@@ -321,7 +297,6 @@ class ApiService {
     return response.data || [];
   }
 
-  // 搜索相关API
   async searchRequests(filters = {}) {
     const queryParams = new URLSearchParams();
     Object.entries(filters).forEach(([key, value]) => {
@@ -335,7 +310,6 @@ class ApiService {
     return response.data || [];
   }
 
-  // 收藏相关API
   async getShortlists(userId) {
     const response = await this.get(`/users/${userId}/shortlist`);
     return response.data || [];
@@ -351,7 +325,6 @@ class ApiService {
   }
 }
 
-// 创建单例实例
 const apiService = new ApiService();
 
 export default apiService;

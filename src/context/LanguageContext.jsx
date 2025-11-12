@@ -1,4 +1,3 @@
-// 国际化语言切换上下文
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const LanguageContext = createContext();
@@ -11,7 +10,6 @@ export const useLanguage = () => {
   return context;
 };
 
-// 语言配置
 export const LANGUAGES = {
   zh: {
     code: 'zh',
@@ -28,13 +26,11 @@ export const LANGUAGES = {
 export const LanguageProvider = ({ children }) => {
   const [currentLanguage, setCurrentLanguage] = useState('zh');
 
-  // 从localStorage加载保存的语言设置
   useEffect(() => {
     const savedLanguage = localStorage.getItem('preferred-language');
     if (savedLanguage && LANGUAGES[savedLanguage]) {
       setCurrentLanguage(savedLanguage);
     } else {
-      // 检测浏览器语言
       const browserLanguage = navigator.language.toLowerCase();
       if (browserLanguage.startsWith('en')) {
         setCurrentLanguage('en');
@@ -44,23 +40,17 @@ export const LanguageProvider = ({ children }) => {
     }
   }, []);
 
-  // 切换语言
   const changeLanguage = (languageCode) => {
     if (LANGUAGES[languageCode]) {
       setCurrentLanguage(languageCode);
       localStorage.setItem('preferred-language', languageCode);
-      
-      // 为了更好的用户体验，可以添加页面重新加载
-      // window.location.reload();
     }
   };
 
-  // 获取当前语言的翻译文本
-  const t = (key, variables = null, fallback = key) => {
+  const t = (key, variables = null, fallback = '') => {
     const translations = getTranslations(currentLanguage);
     let text = translations[key] || fallback;
     
-    // 支持变量替换 {variable}
     if (variables && typeof variables === 'object') {
       Object.keys(variables).forEach(varKey => {
         text = text.replace(new RegExp(`{${varKey}}`, 'g'), variables[varKey]);
@@ -86,11 +76,9 @@ export const LanguageProvider = ({ children }) => {
   );
 };
 
-// 翻译文本配置
 const getTranslations = (language) => {
   const translations = {
     zh: {
-      // 通用
       'app.title': 'CSR志愿者匹配系统',
       'app.subtitle': '连接需要帮助的人与热心志愿者',
       'common.loading': '加载中...',
@@ -126,6 +114,7 @@ const getTranslations = (language) => {
       'common.volunteer': '志愿者',
       'common.newRequest': '新服务请求',
       'common.requestMatched': '请求已匹配',
+      'common.locale': 'zh-CN',
       
       // 时间相关
       'time.justNow': '刚刚',
@@ -243,9 +232,24 @@ const getTranslations = (language) => {
       'admin.reports.weekly': '周报',
       'admin.reports.monthly': '月报',
       'admin.reports.generate': '生成报告',
+      'admin.reports.generating': '生成中...',
       'admin.reports.totalMatches': '总匹配数',
       'admin.reports.newUsers': '新注册用户',
       'admin.reports.activeRequests': '活跃请求',
+      'admin.reports.completionRate': '完成率',
+      'admin.reports.config': '报告配置',
+      'admin.reports.reportType': '报告类型',
+      'admin.reports.growthLastMonth': '较上月增长',
+      'admin.reports.currentActive': '当前活跃',
+      'admin.reports.periodCompletion': '周期完成率',
+      'admin.reports.systemInfo': '系统信息',
+      'admin.reports.timeRange': '时间范围',
+      'admin.reports.generatedTime': '生成时间',
+      'admin.reports.totalUsers': '总用户数',
+      'admin.reports.totalRequests': '总请求数',
+      'admin.reports.systemStatus': '系统状态',
+      'admin.reports.statusGood': '良好',
+      'admin.reports.statusNeedAttention': '需要关注',
       'dailyGrowth': '较昨日',
       'weeklyGrowth': '较上周',
       'monthlyGrowth': '较上月',
@@ -259,6 +263,19 @@ const getTranslations = (language) => {
       'weekHelp': '选择要查看的周',
       'monthHelp': '选择要查看的月份',
       'configDescription': '选择报告类型和时间范围来生成详细的数据分析报告',
+      'admin.reports.systemDataAnalysis': '系统运行数据统计与分析',
+      'admin.reports.download': '下载报告',
+      'admin.reports.categoryBreakdown': '分类统计',
+      'admin.reports.requests': '请求',
+      'admin.reports.matched': '已匹配',
+      'admin.reports.topPerformers': '优秀志愿者',
+      'admin.reports.matches': '次匹配',
+      'admin.reports.categories': '个分类',
+      'admin.reports.dateRange': '时间范围',
+      'admin.reports.systemHealth': '系统状态',
+      'admin.reports.healthy': '良好',
+      'admin.reports.needsAttention': '需要关注',
+      'admin.reports.downloadError': '下载报告失败，请重试',
       
       // 管理员 - 系统日志
       'admin.systemLogs.title': '系统日志',
@@ -302,6 +319,21 @@ const getTranslations = (language) => {
       'admin.alerts.comingSoon': '功能开发中',
       'admin.alerts.comingSoonDesc': '警报创建和编辑功能即将推出',
       'admin.alerts.confirmDelete': '确认删除此警报配置？',
+      'admin.alerts.failedLoginAlert': '失败登录警报',
+      'admin.alerts.failedLoginDesc': '当用户连续失败登录超过阈值时触发',
+      'admin.alerts.systemResourceAlert': '系统资源警报',
+      'admin.alerts.systemResourceDesc': '当系统内存使用率超过85%时触发',
+      'admin.alerts.userSurgeAlert': '用户注册激增',
+      'admin.alerts.userSurgeDesc': '当每小时注册用户超过50人时触发',
+      'admin.alerts.dbConnectionAlert': '数据库连接失败',
+      'admin.alerts.dbConnectionDesc': '数据库连接失败时立即触发',
+      'admin.alerts.suspiciousIPAlert': '可疑IP活动',
+      'admin.alerts.suspiciousIPDesc': '当同一IP在短时间内有异常请求时触发',
+      'admin.alerts.typeSecurity': '安全',
+      'admin.alerts.typeSystem': '系统',
+      'admin.alerts.typeUser': '用户',
+      'admin.alerts.people': '人',
+      'admin.alerts.times': '次',
       
       // 管理员仪表板
       'admin.dashboard.welcome': '欢迎回来',
@@ -477,6 +509,32 @@ const getTranslations = (language) => {
       'pin.dashboard.tip3': '保持联系方式准确，方便志愿者联系您',
       'pin.dashboard.matchedWith': '已匹配志愿者：{name}',
       'pin.dashboard.contact': '联系',
+      'pin.dashboard.applicants': '申请者',
+      'pin.dashboard.interestedVolunteers': '申请的志愿者',
+      'pin.dashboard.selectVolunteer': '选择',
+      'pin.dashboard.confirmSelect': '确定选择这位志愿者吗？',
+      'pin.dashboard.selectSuccess': '已成功匹配志愿者！',
+      'pin.dashboard.complete': '完成',
+      'pin.dashboard.confirmComplete': '确认已完成此请求吗？',
+      'pin.dashboard.completeSuccess': '请求已完成！感谢您的评价。',
+      'pin.dashboard.rateVolunteer': '评价志愿者',
+      'pin.dashboard.serviceRating': '服务评分',
+      'pin.dashboard.feedback': '评价反馈',
+      'pin.dashboard.feedbackPlaceholder': '分享您对志愿者服务的评价和建议...',
+      'pin.dashboard.submitRating': '提交评价',
+      'pin.dashboard.filterByStatus': '按状态筛选',
+      'pin.dashboard.sortBy': '排序方式',
+      'pin.dashboard.sort.newest': '最新创建',
+      'pin.dashboard.sort.oldest': '最早创建',
+      'pin.dashboard.sort.urgent': '按紧急程度',
+      'pin.dashboard.showing': '显示',
+      'pin.dashboard.status.completed': '已完成',
+      'rating.poor': '很差',
+      'rating.fair': '一般',
+      'rating.good': '良好',
+      'rating.veryGood': '很好',
+      'rating.excellent': '优秀',
+      'common.optional': '可选',
       'common.online': '在线',
       'common.total': '总计',
       'common.views': '浏览',
@@ -555,6 +613,7 @@ const getTranslations = (language) => {
       'csr.search.opportunities': '志愿服务机会',
       'csr.search.opportunitiesDesc': '点击"申请志愿"来帮助有需要的人',
       'csr.search.applyVolunteer': '申请志愿',
+      'csr.search.applied': '已申请',
       'csr.search.viewDetails': '查看详情',
       'csr.search.noOpportunities': '暂无志愿机会',
       'csr.search.noOpportunitiesDesc': '目前没有待匹配的志愿服务请求，请稍后再查看',
@@ -565,13 +624,45 @@ const getTranslations = (language) => {
       'csr.search.applySuccess': '申请成功！您可以在历史记录中查看您的志愿服务记录。',
       'csr.search.loginRequired': '请先登录后再申请志愿服务！',
       'csr.search.applyError': '申请失败，请重试！',
+      'csr.search.cancelApplication': '取消申请',
+      'csr.search.confirmCancel': '确认取消申请？',
+      'csr.search.cancelSuccess': '已取消申请',
+      'csr.search.cancelError': '取消申请失败，请重试！',
+      'csr.search.rejectRequest': '拒绝请求',
+      'csr.search.rejectReason': '拒绝原因',
+      'csr.search.rejectReasonPlaceholder': '请说明该请求为何不在您的职责范围内...',
+      'csr.search.confirmReject': '确认拒绝该请求？此操作将隐藏该请求。',
+      'csr.search.rejectSuccess': '已拒绝该请求',
+      'csr.search.rejectError': '拒绝失败，请重试！',
       'csr.search.shortlist': '收藏',
       'csr.search.shortlisted': '已收藏',
       'csr.search.addToShortlist': '已添加到收藏夹',
       'csr.search.removeFromShortlist': '已从收藏夹移除',
       
       // CSR历史记录
-      'csr.history.title': '已完成的服务记录',
+      'csr.history.title': '志愿服务历史',
+      'csr.history.subtitle': '查看您完成的志愿服务记录和帮助历史',
+      'csr.history.totalServices': '完成服务',
+      'csr.history.serviceTypes': '服务类型',
+      'csr.history.mostActive': '最常服务',
+      'csr.history.filterByType': '服务类型',
+      'csr.history.allServiceTypes': '所有服务类型',
+      'csr.history.startDate': '开始日期',
+      'csr.history.endDate': '结束日期',
+      'csr.history.clearFilters': '清除过滤器',
+      'csr.history.resultsFound': '找到 {count} 条服务记录',
+      'csr.history.noRecords': '暂无服务记录',
+      'csr.history.noRecordsDesc': '您还没有完成任何志愿服务。去搜索页面找到需要帮助的人，开始您的志愿服务之旅！',
+      'csr.history.noFilteredRecords': '没有符合条件的记录',
+      'csr.history.noFilteredRecordsDesc': '尝试调整过滤条件查看更多记录',
+      'csr.history.browseOpportunities': '浏览志愿机会',
+      'csr.history.serviceDate': '服务时间',
+      'csr.history.serviceObject': '服务对象',
+      'csr.history.serviceLocation': '服务地点',
+      'csr.history.expectedTime': '预期时间',
+      'csr.history.contactInfo': '联系方式',
+      'csr.history.toBeConfirmed': '待确定',
+      'csr.history.unknown': '未知',
       
       // CSR收藏夹
       'csr.shortlist.title': '我的收藏夹',
@@ -701,6 +792,15 @@ const getTranslations = (language) => {
       'request.detail.volunteer': '志愿者信息',
       'request.detail.createdAt': '创建时间',
       'request.detail.expectedTiming': '预期时间',
+  'request.rating.leaveRatingFor': '为 {name} 留下评分',
+  'request.rating.select': '选择评分',
+  'request.rating.submit': '提交评分',
+  'request.rating.feedbackPlaceholder': '可选：写下对志愿者的感谢或建议',
+  'error.submitRating': '提交评分失败，请稍后再试',
+  'error.updateRequestFailed': '更新请求失败',
+  'error.deleteRequestFailed': '删除请求失败',
+  'error.selectVolunteerFailed': '选择志愿者失败，请重试',
+  'error.completeRequestFailed': '完成请求失败，请重试',
       'request.detail.viewCount': '浏览次数',
       'request.detail.shortlistCount': '收藏次数',
       'request.detail.matchedAt': '匹配时间',
@@ -753,6 +853,7 @@ const getTranslations = (language) => {
       'common.location': 'Location',
       'common.createdAt': 'Created At',
       'common.volunteer': 'Volunteer',
+      'common.locale': 'en-US',
       
       // Time Related
       'time.justNow': 'Just now',
@@ -873,12 +974,50 @@ const getTranslations = (language) => {
       'admin.reports.weekly': 'Weekly Report',
       'admin.reports.monthly': 'Monthly Report',
       'admin.reports.generate': 'Generate Report',
+      'admin.reports.generating': 'Generating...',
       'admin.reports.totalMatches': 'Total Matches',
       'admin.reports.newUsers': 'New Users',
       'admin.reports.activeRequests': 'Active Requests',
+      'admin.reports.completionRate': 'Completion Rate',
+      'admin.reports.config': 'Report Configuration',
+      'admin.reports.reportType': 'Report Type',
+      'admin.reports.growthLastMonth': 'Growth vs Last Month',
+      'admin.reports.currentActive': 'Currently Active',
+      'admin.reports.periodCompletion': 'Period Completion Rate',
+      'admin.reports.systemInfo': 'System Information',
+      'admin.reports.timeRange': 'Time Range',
+      'admin.reports.generatedTime': 'Generated Time',
+      'admin.reports.totalUsers': 'Total Users',
+      'admin.reports.totalRequests': 'Total Requests',
+      'admin.reports.systemStatus': 'System Status',
+      'admin.reports.statusGood': 'Good',
+      'admin.reports.statusNeedAttention': 'Need Attention',
       'dailyGrowth': 'vs Yesterday',
       'weeklyGrowth': 'vs Last Week',
       'monthlyGrowth': 'vs Last Month',
+      'growth': 'Growth',
+      'decrease': 'Decrease',
+      'reportPeriod': 'Report Period',
+      'generatedAt': 'Generated At',
+      'selectDate': 'Select Date',
+      'selectWeek': 'Select Week',
+      'selectMonth': 'Select Month',
+      'weekHelp': 'Select the week to view',
+      'monthHelp': 'Select the month to view',
+      'configDescription': 'Select report type and time range to generate detailed data analysis report',
+      'admin.reports.systemDataAnalysis': 'System Operation Data Statistics and Analysis',
+      'admin.reports.download': 'Download Report',
+      'admin.reports.categoryBreakdown': 'Category Statistics',
+      'admin.reports.requests': 'Requests',
+      'admin.reports.matched': 'Matched',
+      'admin.reports.topPerformers': 'Top Volunteers',
+      'admin.reports.matches': 'Matches',
+      'admin.reports.categories': 'Categories',
+      'admin.reports.dateRange': 'Date Range',
+      'admin.reports.systemHealth': 'System Health',
+      'admin.reports.healthy': 'Healthy',
+      'admin.reports.needsAttention': 'Needs Attention',
+      'admin.reports.downloadError': 'Failed to download report, please try again',
       'growth': 'increase',
       'decrease': 'decrease',
       'reportPeriod': 'Report Period',
@@ -969,6 +1108,22 @@ const getTranslations = (language) => {
       'admin.alerts.createAlert': 'Create Alert',
       'admin.alerts.comingSoon': 'Feature in Development',
       'admin.alerts.comingSoonDesc': 'Alert creation and editing features coming soon',
+      'admin.alerts.confirmDelete': 'Are you sure you want to delete this alert configuration?',
+      'admin.alerts.failedLoginAlert': 'Failed Login Alert',
+      'admin.alerts.failedLoginDesc': 'Triggered when user consecutive login failures exceed threshold',
+      'admin.alerts.systemResourceAlert': 'System Resource Alert',
+      'admin.alerts.systemResourceDesc': 'Triggered when system memory usage exceeds 85%',
+      'admin.alerts.userSurgeAlert': 'User Registration Surge',
+      'admin.alerts.userSurgeDesc': 'Triggered when user registrations exceed 50 per hour',
+      'admin.alerts.dbConnectionAlert': 'Database Connection Failed',
+      'admin.alerts.dbConnectionDesc': 'Triggered immediately when database connection fails',
+      'admin.alerts.suspiciousIPAlert': 'Suspicious IP Activity',
+      'admin.alerts.suspiciousIPDesc': 'Triggered when same IP has abnormal requests in short time',
+      'admin.alerts.typeSecurity': 'Security',
+      'admin.alerts.typeSystem': 'System',
+      'admin.alerts.typeUser': 'User',
+      'admin.alerts.people': 'people',
+      'admin.alerts.times': 'times',
       'admin.alerts.confirmDelete': 'Are you sure you want to delete this alert configuration?',
       
       // Admin - Dashboard
@@ -1107,6 +1262,32 @@ const getTranslations = (language) => {
       'pin.dashboard.tip3': 'Keep contact information accurate for volunteers to reach you',
       'pin.dashboard.matchedWith': 'Matched with volunteer: {name}',
       'pin.dashboard.contact': 'Contact',
+      'pin.dashboard.applicants': 'Applicants',
+      'pin.dashboard.interestedVolunteers': 'Interested Volunteers',
+      'pin.dashboard.selectVolunteer': 'Select',
+      'pin.dashboard.confirmSelect': 'Are you sure you want to select this volunteer?',
+      'pin.dashboard.selectSuccess': 'Volunteer matched successfully!',
+      'pin.dashboard.complete': 'Complete',
+      'pin.dashboard.confirmComplete': 'Confirm this request is completed?',
+      'pin.dashboard.completeSuccess': 'Request completed! Thank you for your rating.',
+      'pin.dashboard.rateVolunteer': 'Rate Volunteer',
+      'pin.dashboard.serviceRating': 'Service Rating',
+      'pin.dashboard.feedback': 'Feedback',
+      'pin.dashboard.feedbackPlaceholder': 'Share your thoughts about the volunteer service...',
+      'pin.dashboard.submitRating': 'Submit Rating',
+      'pin.dashboard.filterByStatus': 'Filter by Status',
+      'pin.dashboard.sortBy': 'Sort By',
+      'pin.dashboard.sort.newest': 'Newest First',
+      'pin.dashboard.sort.oldest': 'Oldest First',
+      'pin.dashboard.sort.urgent': 'By Urgency',
+      'pin.dashboard.showing': 'Showing',
+      'pin.dashboard.status.completed': 'Completed',
+      'rating.poor': 'Poor',
+      'rating.fair': 'Fair',
+      'rating.good': 'Good',
+      'rating.veryGood': 'Very Good',
+      'rating.excellent': 'Excellent',
+      'common.optional': 'Optional',
       'common.online': 'Online',
       'common.total': 'Total',
       'common.views': 'Views',
@@ -1185,6 +1366,7 @@ const getTranslations = (language) => {
       'csr.search.opportunities': 'Volunteer Service Opportunities',
       'csr.search.opportunitiesDesc': 'Click "Apply to Volunteer" to help people in need',
       'csr.search.applyVolunteer': 'Apply to Volunteer',
+      'csr.search.applied': 'Applied',
       'csr.search.viewDetails': 'View Details',
       'csr.search.noOpportunities': 'No opportunities available',
       'csr.search.noOpportunitiesDesc': 'No pending volunteer service requests at the moment, please check back later',
@@ -1195,13 +1377,45 @@ const getTranslations = (language) => {
       'csr.search.applySuccess': 'Application successful! You can view your volunteer service records in history.',
       'csr.search.loginRequired': 'Please login first before applying for volunteer services!',
       'csr.search.applyError': 'Application failed, please try again!',
+      'csr.search.cancelApplication': 'Cancel Application',
+      'csr.search.confirmCancel': 'Are you sure you want to cancel this application?',
+      'csr.search.cancelSuccess': 'Application cancelled successfully',
+      'csr.search.cancelError': 'Failed to cancel application, please try again!',
+      'csr.search.rejectRequest': 'Reject Request',
+      'csr.search.rejectReason': 'Reason for Rejection',
+      'csr.search.rejectReasonPlaceholder': 'Please explain why this request falls outside your responsibility...',
+      'csr.search.confirmReject': 'Are you sure you want to reject this request? This will hide it from your search.',
+      'csr.search.rejectSuccess': 'Request rejected successfully',
+      'csr.search.rejectError': 'Failed to reject request, please try again!',
       'csr.search.shortlist': 'Shortlist',
       'csr.search.shortlisted': 'Shortlisted',
       'csr.search.addToShortlist': 'Added to shortlist',
       'csr.search.removeFromShortlist': 'Removed from shortlist',
       
       // CSR History
-      'csr.history.title': 'Completed Service Records',
+      'csr.history.title': 'Volunteer Service History',
+      'csr.history.subtitle': 'View your completed volunteer service records and help history',
+      'csr.history.totalServices': 'Completed Services',
+      'csr.history.serviceTypes': 'Service Types',
+      'csr.history.mostActive': 'Most Active',
+      'csr.history.filterByType': 'Service Type',
+      'csr.history.allServiceTypes': 'All Service Types',
+      'csr.history.startDate': 'Start Date',
+      'csr.history.endDate': 'End Date',
+      'csr.history.clearFilters': 'Clear Filters',
+      'csr.history.resultsFound': 'Found {count} service records',
+      'csr.history.noRecords': 'No Service Records',
+      'csr.history.noRecordsDesc': 'You haven\'t completed any volunteer services yet. Go to the search page to find people in need and start your volunteer journey!',
+      'csr.history.noFilteredRecords': 'No Matching Records',
+      'csr.history.noFilteredRecordsDesc': 'Try adjusting the filter criteria to view more records',
+      'csr.history.browseOpportunities': 'Browse Volunteer Opportunities',
+      'csr.history.serviceDate': 'Service Date',
+      'csr.history.serviceObject': 'Service Recipient',
+      'csr.history.serviceLocation': 'Service Location',
+      'csr.history.expectedTime': 'Expected Time',
+      'csr.history.contactInfo': 'Contact Information',
+      'csr.history.toBeConfirmed': 'To Be Confirmed',
+      'csr.history.unknown': 'Unknown',
       
       // CSR Shortlist
       'csr.shortlist.title': 'My Shortlist',
@@ -1331,6 +1545,15 @@ const getTranslations = (language) => {
       'request.detail.volunteer': 'Volunteer Information',
       'request.detail.createdAt': 'Created At',
       'request.detail.expectedTiming': 'Expected Time',
+  'request.rating.leaveRatingFor': 'Leave a rating for {name}',
+  'request.rating.select': 'Select rating',
+  'request.rating.submit': 'Submit Rating',
+  'request.rating.feedbackPlaceholder': 'Optional: leave a comment for the volunteer',
+  'error.submitRating': 'Failed to submit rating, please try again',
+  'error.updateRequestFailed': 'Failed to update request',
+  'error.deleteRequestFailed': 'Failed to delete request',
+  'error.selectVolunteerFailed': 'Failed to select volunteer, please try again',
+  'error.completeRequestFailed': 'Failed to complete request, please try again',
       'request.detail.viewCount': 'View Count',
       'request.detail.shortlistCount': 'Shortlist Count',
       'request.detail.matchedAt': 'Matched At',

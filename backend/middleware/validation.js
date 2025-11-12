@@ -1,7 +1,5 @@
-// 数据验证中间件 - Boundary Layer
 const { body, query, validationResult } = require('express-validator');
 
-// 验证错误处理中间件
 exports.handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -16,26 +14,21 @@ exports.handleValidationErrors = (req, res, next) => {
   next();
 };
 
-// 常用验证规则
 const commonValidations = {
-  // 邮箱验证
   email: body('email')
     .isEmail()
     .normalizeEmail()
     .withMessage('请输入有效的邮箱地址'),
 
-  // 密码验证
   password: body('password')
     .isLength({ min: 6, max: 128 })
     .withMessage('密码长度必须在6-128字符之间'),
 
-  // 手机号验证
   phone: body('phone')
     .optional()
     .matches(/^1[3-9]\d{9}$/)
     .withMessage('请输入有效的手机号码'),
 
-  // 姓名验证
   name: body('name')
     .trim()
     .isLength({ min: 2, max: 50 })
@@ -43,23 +36,19 @@ const commonValidations = {
     .matches(/^[\u4e00-\u9fa5a-zA-Z\s]+$/)
     .withMessage('姓名只能包含中文、英文和空格'),
 
-  // 用户类型验证
   userType: body('userType')
     .isIn(['pin', 'csr', 'system_admin', 'platform_manager'])
     .withMessage('用户类型必须是pin、csr、system_admin或platform_manager'),
 
-  // MongoDB ObjectId验证
   mongoId: (field) => body(field)
     .isMongoId()
     .withMessage(`${field}必须是有效的ID格式`),
 
-  // 日期验证
   date: (field) => body(field)
     .isISO8601()
     .toDate()
     .withMessage(`${field}必须是有效的日期格式`),
 
-  // 分页验证
   pagination: {
     page: body('page')
       .optional()
@@ -72,7 +61,6 @@ const commonValidations = {
   }
 };
 
-// 请求相关验证
 const requestValidations = {
   create: [
     body('title')
@@ -190,7 +178,6 @@ const requestValidations = {
   ]
 };
 
-// 用户相关验证
 const userValidations = {
   register: [
     commonValidations.name,
@@ -279,7 +266,6 @@ const userValidations = {
   ]
 };
 
-// 收藏夹相关验证
 const shortlistValidations = {
   add: [
     body('notes')
@@ -299,9 +285,7 @@ const shortlistValidations = {
   ]
 };
 
-// 自定义验证函数
 const customValidators = {
-  // 验证日期范围
   dateRange: (startField, endField) => {
     return body(endField).custom((endDate, { req }) => {
       const startDate = req.body[startField];
@@ -312,7 +296,6 @@ const customValidators = {
     });
   },
 
-  // 验证文件类型
   fileType: (allowedTypes) => {
     return (req, res, next) => {
       if (req.file) {
@@ -329,7 +312,6 @@ const customValidators = {
     };
   },
 
-  // 验证文件大小
   fileSize: (maxSize) => {
     return (req, res, next) => {
       if (req.file && req.file.size > maxSize) {
@@ -343,7 +325,6 @@ const customValidators = {
     };
   },
 
-  // 验证数组长度
   arrayLength: (field, min = 0, max = 100) => {
     return body(field)
       .optional()
@@ -351,16 +332,13 @@ const customValidators = {
       .withMessage(`${field}数组长度必须在${min}-${max}之间`);
   },
 
-  // 验证枚举值
   enum: (field, values, optional = false) => {
     const validator = body(field).isIn(values).withMessage(`${field}必须是以下值之一：${values.join(', ')}`);
     return optional ? validator.optional() : validator;
   }
 };
 
-// 业务逻辑验证
 const businessValidations = {
-  // 验证用户是否有权限访问资源
   resourceOwnership: (resourceField = 'user') => {
     return (req, res, next) => {
       const adminTypes = ['system_admin', 'platform_manager'];
@@ -383,7 +361,6 @@ const businessValidations = {
     };
   },
 
-  // 验证请求状态是否允许操作
   requestStatus: (allowedStatuses) => {
     return async (req, res, next) => {
       try {
@@ -414,8 +391,6 @@ const businessValidations = {
     };
   }
 };
-
-// ============ 认证相关验证规则 ============
 
 exports.registerValidation = [
   body('name')
@@ -481,8 +456,6 @@ exports.changePasswordValidation = [
     })
 ];
 
-// ============ 用户管理相关验证规则 ============
-
 exports.getUsersValidation = [
   query('page').optional().isInt({ min: 1 }),
   query('limit').optional().isInt({ min: 1, max: 100 }),
@@ -505,8 +478,6 @@ exports.updateUserValidation = [
     .isIn(['pin', 'csr', 'system_admin', 'platform_manager'])
     .withMessage('用户类型必须是 pin, csr, system_admin 或 platform_manager')
 ];
-
-// ============ 请求管理相关验证规则 ============
 
 exports.createRequestValidation = [
   body('title')
@@ -578,8 +549,6 @@ exports.updateRequestValidation = [
     .isIn(['low', 'medium', 'high', 'urgent'])
     .withMessage('无效的紧急程度')
 ];
-
-// ============ 分类管理相关验证规则 ============
 
 exports.createCategoryValidation = [
   body('name')

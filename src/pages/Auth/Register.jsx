@@ -1,5 +1,3 @@
-// 用户注册页面
-// src/pages/Auth/Register.jsx
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -14,17 +12,17 @@ const Register = () => {
     confirmPassword: '',
     userType: '',
     phone: '',
-    organization: '', // 仅CSR和Admin需要
+    organization: '',
     address: '',
-    birthDate: '', // 仅PIN用户需要
-    emergencyContact: '', // 仅PIN用户需要
-    skills: [], // 仅CSR用户需要
-    adminCode: '' // 仅Admin需要
+    birthDate: '',
+    emergencyContact: '',
+    skills: [],
+    adminCode: ''
   });
   
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState(1); // 多步骤注册
+  const [step, setStep] = useState(1);
   
   const { register } = useAuth();
   const { t } = useLanguage();

@@ -1,10 +1,6 @@
-// 真实数据报告服务
-// src/services/reportService.js
-
 import { DataService } from './dataService';
 
 export class ReportService {
-  // 获取指定日期范围的数据
   static getDateRangeData(startDate, endDate, requests, users) {
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -22,7 +18,6 @@ export class ReportService {
     return { requests: filteredRequests, users: filteredUsers };
   }
   
-  // 生成日报数据
   static async generateDailyReport(targetDate = new Date()) {
     const users = await DataService.getUsers();
     const requests = await DataService.getRequests();
@@ -39,7 +34,6 @@ export class ReportService {
       users
     );
     
-    // 计算昨天的数据用于对比
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
     const { requests: yesterdayRequests, users: yesterdayUsers } = this.getDateRangeData(
@@ -60,7 +54,6 @@ export class ReportService {
     
     const activeRequests = requests.filter(r => r.status === 'pending' || r.status === 'matched').length;
     
-    // 计算完成率
     const completedToday = todayRequests.filter(r => r.status === 'completed').length;
     const totalProcessedToday = todayRequests.filter(r => r.status !== 'pending').length;
     const completionRate = totalProcessedToday === 0 ? 0 : 
@@ -85,18 +78,15 @@ export class ReportService {
       }
     };
   }
-  
-  // 生成周报数据
   static async generateWeeklyReport(targetDate = new Date()) {
     const users = await DataService.getUsers();
     const requests = await DataService.getRequests();
     
-    // 计算包含目标日期的那一周（周一到周日）
     const date = new Date(targetDate);
     const dayOfWeek = date.getDay();
-    const startDate = new Date(date);
-    // 调整到周一（如果周日是0，则调整为-6，否则调整为1-dayOfWeek）
     const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    
+    const startDate = new Date(date);
     startDate.setDate(date.getDate() + daysToMonday);
     startDate.setHours(0, 0, 0, 0);
     
@@ -110,8 +100,6 @@ export class ReportService {
       requests,
       users
     );
-    
-    // 计算上周数据用于对比
     const lastWeekEnd = new Date(startDate);
     const lastWeekStart = new Date(lastWeekEnd);
     lastWeekStart.setDate(lastWeekStart.getDate() - 7);
@@ -134,7 +122,6 @@ export class ReportService {
     
     const activeRequests = requests.filter(r => r.status === 'pending' || r.status === 'matched').length;
     
-    // 计算完成率
     const completedWeek = weekRequests.filter(r => r.status === 'completed').length;
     const totalProcessedWeek = weekRequests.filter(r => r.status !== 'pending').length;
     const completionRate = totalProcessedWeek === 0 ? 0 : 
@@ -159,8 +146,6 @@ export class ReportService {
       }
     };
   }
-  
-  // 生成月报数据
   static async generateMonthlyReport(targetDate = new Date()) {
     const users = await DataService.getUsers();
     const requests = await DataService.getRequests();
@@ -174,8 +159,6 @@ export class ReportService {
       requests,
       users
     );
-    
-    // 计算上月数据用于对比
     const lastMonthEnd = new Date(startDate);
     lastMonthEnd.setDate(lastMonthEnd.getDate() - 1);
     const lastMonthStart = new Date(lastMonthEnd.getFullYear(), lastMonthEnd.getMonth(), 1);
@@ -198,7 +181,6 @@ export class ReportService {
     
     const activeRequests = requests.filter(r => r.status === 'pending' || r.status === 'matched').length;
     
-    // 计算完成率
     const completedMonth = monthRequests.filter(r => r.status === 'completed').length;
     const totalProcessedMonth = monthRequests.filter(r => r.status !== 'pending').length;
     const completionRate = totalProcessedMonth === 0 ? 0 : 
@@ -224,8 +206,6 @@ export class ReportService {
       }
     };
   }
-  
-  // 获取分类统计
   static async getCategoryBreakdown(requests) {
     const categories = await DataService.getCategories();
     const breakdown = {};
@@ -241,7 +221,6 @@ export class ReportService {
     return breakdown;
   }
   
-  // 获取用户类型统计
   static getUserTypeBreakdown(users) {
     return {
       pin: users.filter(u => u.userType === 'pin').length,
@@ -251,7 +230,6 @@ export class ReportService {
     };
   }
   
-  // 获取每小时活动数据
   static getHourlyActivity(requests) {
     const hourlyData = Array.from({ length: 24 }, (_, i) => ({ hour: i, count: 0 }));
     
@@ -262,8 +240,6 @@ export class ReportService {
     
     return hourlyData;
   }
-  
-  // 获取每日活动数据
   static getDailyActivity(requests, startDate, endDate) {
     const dailyData = [];
     const current = new Date(startDate);
@@ -290,8 +266,6 @@ export class ReportService {
     
     return dailyData;
   }
-  
-  // 获取每周活动数据  
   static getWeeklyActivity(requests, startDate, endDate) {
     const weeklyData = [];
     const current = new Date(startDate);
@@ -323,8 +297,7 @@ export class ReportService {
     return weeklyData;
   }
   
-  // 获取优秀志愿者排行
-  static getTopPerformers(requests) {
+  static getTopVolunteers(requests) {
     const volunteerStats = {};
     
     requests.filter(r => r.status === 'matched' && r.volunteer).forEach(request => {
@@ -348,8 +321,6 @@ export class ReportService {
       .sort((a, b) => b.matches - a.matches)
       .slice(0, 5);
   }
-  
-  // 生成综合报告
   static async generateComprehensiveReport(reportType = 'monthly', targetDate = new Date()) {
     let report;
     
@@ -380,8 +351,6 @@ export class ReportService {
       }
     };
   }
-  
-  // 格式化报告为易读文本
   static formatReportText(report) {
     const reportTypeNames = {
       daily: '日报',
@@ -391,7 +360,7 @@ export class ReportService {
     
     let text = '';
     text += '='.repeat(60) + '\n';
-    text += `CSR志愿者匹配系统 - ${reportTypeNames[report.reportType] || '报告'}\n`;
+    text += `CSR志愿者匹配系�?- ${reportTypeNames[report.reportType] || '报告'}\n`;
     text += '='.repeat(60) + '\n\n';
     
     text += `报告日期: ${report.date}\n`;
@@ -403,20 +372,20 @@ export class ReportService {
     text += `总匹配数: ${report.totalMatches} 次\n`;
     text += `新增用户: ${report.newUsers} 人\n`;
     text += `活跃请求: ${report.activeRequests} 个\n`;
-    text += `完成率: ${report.completionRate}\n\n`;
+    text += `完成�? ${report.completionRate}\n\n`;
     
     text += '-'.repeat(60) + '\n';
     text += '增长趋势\n';
     text += '-'.repeat(60) + '\n';
-    text += `匹配增长率: ${report.trends.matchGrowth > 0 ? '+' : ''}${report.trends.matchGrowth}%\n`;
-    text += `用户增长率: ${report.trends.userGrowth > 0 ? '+' : ''}${report.trends.userGrowth}%\n\n`;
+    text += `匹配增长�? ${report.trends.matchGrowth > 0 ? '+' : ''}${report.trends.matchGrowth}%\n`;
+    text += `用户增长�? ${report.trends.userGrowth > 0 ? '+' : ''}${report.trends.userGrowth}%\n\n`;
     
     if (report.details.categoryBreakdown) {
       text += '-'.repeat(60) + '\n';
       text += '分类统计\n';
       text += '-'.repeat(60) + '\n';
       Object.entries(report.details.categoryBreakdown).forEach(([key, data]) => {
-        text += `${data.name}: ${data.count} 个请求 (匹配: ${data.matched})\n`;
+        text += `${data.name}: ${data.count} 个请�?(匹配: ${data.matched})\n`;
       });
       text += '\n';
     }
@@ -425,14 +394,14 @@ export class ReportService {
       text += '-'.repeat(60) + '\n';
       text += '用户类型分布\n';
       text += '-'.repeat(60) + '\n';
-      text += `PIN用户 (需要帮助): ${report.details.userTypeBreakdown.pin} 人\n`;
-      text += `CSR志愿者: ${report.details.userTypeBreakdown.csr} 人\n`;
-      text += `管理员: ${report.details.userTypeBreakdown.admin} 人\n\n`;
+      text += `PIN用户 (需要帮�?: ${report.details.userTypeBreakdown.pin} 人\n`;
+      text += `CSR志愿�? ${report.details.userTypeBreakdown.csr} 人\n`;
+      text += `管理�? ${report.details.userTypeBreakdown.admin} 人\n\n`;
     }
     
     if (report.details.topPerformers && report.details.topPerformers.length > 0) {
       text += '-'.repeat(60) + '\n';
-      text += '优秀志愿者 (Top 5)\n';
+      text += '优秀志愿�?(Top 5)\n';
       text += '-'.repeat(60) + '\n';
       report.details.topPerformers.forEach((volunteer, index) => {
         text += `${index + 1}. ${volunteer.name}\n`;
@@ -447,7 +416,7 @@ export class ReportService {
     text += '-'.repeat(60) + '\n';
     text += `总用户数: ${report.systemInfo.totalUsers} 人\n`;
     text += `总请求数: ${report.systemInfo.totalRequests} 个\n`;
-    text += `系统状态: ${report.systemInfo.systemHealth === 'good' ? '良好' : '异常'}\n\n`;
+    text += `系统状�? ${report.systemInfo.systemHealth === 'good' ? '良好' : '异常'}\n\n`;
     
     text += '='.repeat(60) + '\n';
     text += '报告结束\n';
@@ -456,8 +425,7 @@ export class ReportService {
     return text;
   }
   
-  // 导出报告为易读文本文件
-  static exportReport(report, filename) {
+  static exportReportText(report, filename) {
     const textContent = this.formatReportText(report);
     const textBlob = new Blob([textContent], { type: 'text/plain;charset=utf-8;' });
     
@@ -469,7 +437,6 @@ export class ReportService {
     document.body.removeChild(link);
   }
   
-  // 导出报告为JSON（原始数据）
   static exportReportJSON(report, filename) {
     const dataStr = JSON.stringify(report, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -482,14 +449,13 @@ export class ReportService {
     document.body.removeChild(link);
   }
   
-  // 导出报告为CSV（简化版）
   static exportReportCSV(report, filename) {
     const csvData = [
-      ['指标', '数值', '增长率'],
-      ['总匹配数', report.totalMatches, `${report.trends.matchGrowth}%`],
-      ['新用户', report.newUsers, `${report.trends.userGrowth}%`],
-      ['活跃请求', report.activeRequests, ''],
-      ['完成率', report.completionRate, '']
+      ['Metric', 'Value', 'Growth'],
+      ['Total Matches', report.totalMatches, `${report.trends.matchGrowth}%`],
+      ['New Users', report.newUsers, `${report.trends.userGrowth}%`],
+      ['Active Requests', report.activeRequests, ''],
+      ['Completion Rate', report.completionRate, '']
     ];
     
     const csvContent = csvData.map(row => row.join(',')).join('\n');
@@ -503,8 +469,7 @@ export class ReportService {
     document.body.removeChild(link);
   }
   
-  // 生成并下载综合报告
-  static async generateAndDownloadReport(reportType = 'monthly', targetDate = new Date()) {
+  static async generateAndDownloadReport(reportType, targetDate) {
     const report = await this.generateComprehensiveReport(reportType, targetDate);
     this.exportReport(report, 'system_report');
     return report;

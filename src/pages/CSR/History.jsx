@@ -1,8 +1,7 @@
-// 7. CSR历史记录页面
-// src/pages/CSR/History.jsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { DataService } from '../../services/dataService';
 import Navbar from '../../components/Layout/Navbar';
 import RequestDetailModal from '../../components/PIN/RequestDetailModal';
 import '../../styles/history.css';
@@ -19,46 +18,45 @@ const CSRHistory = () => {
     endDate: ''
   });
 
-  // 加载服务历史记录
   useEffect(() => {
     if (user?.id) {
       loadServiceRecords();
     }
   }, [user?.id]);
 
-  // 应用过滤器
   useEffect(() => {
     applyFilters();
   }, [serviceRecords, filters]);
 
-  const loadServiceRecords = () => {
-    // 从localStorage获取所有请求
-    const allRequests = JSON.parse(localStorage.getItem('userRequests') || '[]');
-    
-    // 过滤出当前CSR志愿者参与的已完成服务
-    const userServiceRecords = allRequests.filter(request => 
-      request.volunteerId === user.id &&
-      request.status === 'matched' &&
-      request.matchedAt // 确保有匹配时间
-    );
+  const loadServiceRecords = async () => {
+    try {
+      await DataService.initializeData();
+      const allRequests = await DataService.getRequests();
+      
+      const userServiceRecords = (allRequests || []).filter(request => 
+        request.volunteerId === user.id &&
+        (request.status === 'matched' || request.status === 'completed') &&
+        request.matchedAt
+      );
 
-    // 按匹配时间降序排序
-    const sortedRecords = userServiceRecords.sort((a, b) => 
-      new Date(b.matchedAt) - new Date(a.matchedAt)
-    );
+      const sortedRecords = userServiceRecords.sort((a, b) => 
+        new Date(b.matchedAt) - new Date(a.matchedAt)
+      );
 
-    setServiceRecords(sortedRecords);
+      setServiceRecords(sortedRecords);
+    } catch (error) {
+      console.error('Failed to load service history:', error);
+      setServiceRecords([]);
+    }
   };
 
   const applyFilters = () => {
     let filtered = [...serviceRecords];
 
-    // 按服务类型过滤
     if (filters.serviceType) {
       filtered = filtered.filter(record => record.category === filters.serviceType);
     }
 
-    // 按日期范围过滤
     if (filters.startDate) {
       filtered = filtered.filter(record => {
         const matchDate = new Date(record.matchedAt);
@@ -91,18 +89,7 @@ const CSRHistory = () => {
   };
 
   const getCategoryText = (category) => {
-    // Use translation system directly for all categories
     return t(`category.${category}`) || category;
-  };
-
-  const getUrgencyText = (urgency) => {
-    const urgencyMap = {
-      low: '低',
-      medium: '中',
-      high: '高',
-      urgent: '紧急'
-    };
-    return urgencyMap[urgency] || urgency;
   };
 
   const getUrgencyColor = (urgency) => {
@@ -115,7 +102,6 @@ const CSRHistory = () => {
     return colorMap[urgency] || 'default';
   };
 
-  // 计算服务统计
   const getServiceStats = () => {
     const totalServices = serviceRecords.length;
     const categoriesCount = {};
@@ -145,7 +131,7 @@ const CSRHistory = () => {
           <div className="page-header">
             <div className="header-content">
               <h1 className="page-title">{t('csr.history.title')}</h1>
-              <p className="page-subtitle">查看您完成的志愿服务记录和帮助历史</p>
+              <p className="page-subtitle">{t('csr.history.subtitle')}</p>
             </div>
           </div>
 
@@ -155,15 +141,15 @@ const CSRHistory = () => {
               <div className="stats-grid">
                 <div className="stat-card">
                   <div className="stat-number">{stats.totalServices}</div>
-                  <div className="stat-label">完成服务</div>
+                  <div className="stat-label">{t('csr.history.totalServices')}</div>
                 </div>
                 <div className="stat-card">
                   <div className="stat-number">{Object.keys(stats.categoriesCount).length}</div>
-                  <div className="stat-label">服务类型</div>
+                  <div className="stat-label">{t('csr.history.serviceTypes')}</div>
                 </div>
                 <div className="stat-card">
                   <div className="stat-number">{getCategoryText(stats.mostActiveCategory)}</div>
-                  <div className="stat-label">最常服务</div>
+                  <div className="stat-label">{t('csr.history.mostActive')}</div>
                 </div>
               </div>
             </div>
@@ -173,23 +159,26 @@ const CSRHistory = () => {
           <div className="filters-section">
             <div className="filters">
               <div className="filter-group">
-                <label>服务类型</label>
+                <label>{t('csr.history.filterByType')}</label>
                 <select 
                   value={filters.serviceType} 
                   onChange={(e) => handleFilterChange('serviceType', e.target.value)}
                   className="filter-select"
                 >
-                  <option value="">所有服务类型</option>
+                  <option value="">{t('csr.history.allServiceTypes')}</option>
                   <option value="medical">{t('category.medical')}</option>
-                  <option value="transport">{t('category.transport')}</option>
+                  <option value="transportation">{t('category.transportation')}</option>
                   <option value="shopping">{t('category.shopping')}</option>
                   <option value="household">{t('category.household')}</option>
                   <option value="companion">{t('category.companion')}</option>
+                  <option value="technology">{t('category.technology')}</option>
+                  <option value="education">{t('category.education')}</option>
+                  <option value="other">{t('category.other')}</option>
                 </select>
               </div>
               
               <div className="filter-group">
-                <label>开始日期</label>
+                <label>{t('csr.history.startDate')}</label>
                 <input 
                   type="date" 
                   value={filters.startDate}
@@ -199,7 +188,7 @@ const CSRHistory = () => {
               </div>
               
               <div className="filter-group">
-                <label>结束日期</label>
+                <label>{t('csr.history.endDate')}</label>
                 <input 
                   type="date" 
                   value={filters.endDate}
@@ -213,13 +202,13 @@ const CSRHistory = () => {
                   className="btn btn-secondary"
                   onClick={() => setFilters({ serviceType: '', startDate: '', endDate: '' })}
                 >
-                  清除过滤器
+                  {t('csr.history.clearFilters')}
                 </button>
               </div>
             </div>
             
             <div className="results-count">
-              找到 {filteredRecords.length} 条服务记录
+              {t('csr.history.resultsFound', { count: filteredRecords.length })}
             </div>
           </div>
 
@@ -234,16 +223,16 @@ const CSRHistory = () => {
                       <div className="card-meta">
                         <span className="category-badge">{getCategoryText(record.category)}</span>
                         <span className={`urgency-badge urgency-${getUrgencyColor(record.urgency)}`}>
-                          {getUrgencyText(record.urgency)}
+                          {t(`urgency.${record.urgency || 'medium'}`)}
                         </span>
                       </div>
                     </div>
                     <div className="service-info">
                       <div className="requester-name">
-                        👤 服务对象: {record.requesterName || '未知'}
+                        👤 {t('csr.history.serviceObject')}: {record.requesterName || t('csr.history.unknown')}
                       </div>
                       <div className="service-date">
-                        🤝 服务时间: {new Date(record.matchedAt).toLocaleDateString('zh-CN')}
+                        🤝 {t('csr.history.serviceDate')}: {new Date(record.matchedAt).toLocaleDateString()}
                       </div>
                     </div>
                   </div>
@@ -252,20 +241,20 @@ const CSRHistory = () => {
                     <p className="description">{record.description}</p>
                     <div className="service-details">
                       <div className="detail-item">
-                        <span className="label">📍 服务地点:</span>
-                        <span className="value">{record.location?.address || record.location || '待确定'}</span>
+                        <span className="label">📍 {t('csr.history.serviceLocation')}:</span>
+                        <span className="value">{record.location?.address || record.location || t('csr.history.toBeConfirmed')}</span>
                       </div>
                       {record.expectedDate && (
                         <div className="detail-item">
-                          <span className="label">🕒 预期时间:</span>
+                          <span className="label">🕒 {t('csr.history.expectedTime')}:</span>
                           <span className="value">
-                            {new Date(record.expectedDate).toLocaleDateString('zh-CN')}
+                            {new Date(record.expectedDate).toLocaleDateString()}
                             {record.expectedTime && ` ${record.expectedTime}`}
                           </span>
                         </div>
                       )}
                       <div className="detail-item">
-                        <span className="label">📞 联系方式:</span>
+                        <span className="label">📞 {t('csr.history.contactInfo')}:</span>
                         <span className="value">{record.requesterPhone || record.requesterEmail}</span>
                       </div>
                     </div>
@@ -276,7 +265,7 @@ const CSRHistory = () => {
                       className="btn btn-primary"
                       onClick={() => handleViewDetail(record)}
                     >
-                      查看详情
+                      {t('common.viewDetails')}
                     </button>
                   </div>
                 </div>
@@ -286,17 +275,17 @@ const CSRHistory = () => {
             <div className="empty-state">
               <div className="empty-state-icon">🤝</div>
               <div className="empty-state-title">
-                {serviceRecords.length === 0 ? '暂无服务记录' : '没有符合条件的记录'}
+                {serviceRecords.length === 0 ? t('csr.history.noRecords') : t('csr.history.noFilteredRecords')}
               </div>
               <div className="empty-state-description">
                 {serviceRecords.length === 0 
-                  ? '您还没有完成任何志愿服务。去搜索页面找到需要帮助的人，开始您的志愿服务之旅！'
-                  : '尝试调整过滤条件查看更多记录'
+                  ? t('csr.history.noRecordsDesc')
+                  : t('csr.history.noFilteredRecordsDesc')
                 }
               </div>
               {serviceRecords.length === 0 && (
                 <a href="/csr/search" className="btn btn-primary">
-                  浏览志愿机会
+                  {t('csr.history.browseOpportunities')}
                 </a>
               )}
             </div>

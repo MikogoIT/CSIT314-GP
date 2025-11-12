@@ -1,9 +1,14 @@
-// 请求详情模态框组件
-import React from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
+import { DataService } from '../../services/dataService';
 
 const RequestDetailModal = ({ request, onClose }) => {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const [submitting, setSubmitting] = useState({});
+  const [localRatings, setLocalRatings] = useState({});
+  const [localFeedbacks, setLocalFeedbacks] = useState({});
   
   if (!request) return null;
 
@@ -216,6 +221,55 @@ const RequestDetailModal = ({ request, onClose }) => {
                       {volunteer.rating && (
                         <div className="volunteer-rating" style={{ marginTop: '5px' }}>
                           {'⭐'.repeat(volunteer.rating)} ({volunteer.rating}/5)
+                        </div>
+                      )}
+                      {/* 如果请求已完成且当前用户是请求者，并且该志愿者还没有评分，显示评分表单 */}
+                      {request.status === 'completed' && user && (user.id === request.requesterId || user._id === request.requesterId || user.id === request.requester) && !volunteer.rating && (
+                        <div className="volunteer-rating-form" style={{ marginTop: '8px' }}>
+                          <label style={{ display: 'block', marginBottom: '6px' }}>{t('request.rating.leaveRatingFor', { name: volunteer.name || t('common.volunteer') })}</label>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
+                            <select
+                              value={localRatings[volunteer.id] || ''}
+                              onChange={e => setLocalRatings(prev => ({ ...prev, [volunteer.id]: parseInt(e.target.value) }))}
+                            >
+                              <option value="">{t('request.rating.select')}</option>
+                              <option value={1}>1</option>
+                              <option value={2}>2</option>
+                              <option value={3}>3</option>
+                              <option value={4}>4</option>
+                              <option value={5}>5</option>
+                            </select>
+                            <button
+                              className="btn btn-primary"
+                              disabled={submitting[volunteer.id] || !localRatings[volunteer.id]}
+                              onClick={async () => {
+                                const rating = localRatings[volunteer.id];
+                                const feedback = localFeedbacks[volunteer.id] || '';
+                                if (!rating) return;
+                                try {
+                                  setSubmitting(prev => ({ ...prev, [volunteer.id]: true }));
+                                  await DataService.completeRequest(request.id, { rating, feedback, volunteerId: volunteer.id });
+                                  // reflect locally
+                                  volunteer.rating = rating;
+                                  if (feedback) volunteer.feedback = feedback;
+                                } catch (err) {
+                                  console.error('提交评分失败', err);
+                                  alert(t('error.submitRating') || '提交评分失败');
+                                } finally {
+                                  setSubmitting(prev => ({ ...prev, [volunteer.id]: false }));
+                                }
+                              }}
+                            >
+                              {submitting[volunteer.id] ? t('common.saving') : t('request.rating.submit')}
+                            </button>
+                          </div>
+                          <textarea
+                            placeholder={t('request.rating.feedbackPlaceholder')}
+                            value={localFeedbacks[volunteer.id] || ''}
+                            onChange={e => setLocalFeedbacks(prev => ({ ...prev, [volunteer.id]: e.target.value }))}
+                            rows={3}
+                            style={{ width: '100%', marginTop: '6px' }}
+                          />
                         </div>
                       )}
                       {volunteer.feedback && (

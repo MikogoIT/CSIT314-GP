@@ -1,4 +1,3 @@
-// 语言切换组件
 import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import '../../styles/language-switcher.css';

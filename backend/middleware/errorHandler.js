@@ -1,12 +1,9 @@
-// 全局错误处理中间件
 const errorHandler = (err, req, res, next) => {
   let error = { ...err };
   error.message = err.message;
 
-  // 记录错误到控制台（生产环境中应该使用专业的日志系统）
   console.error('Error:', err);
 
-  // Mongoose验证错误
   if (err.name === 'ValidationError') {
     const message = Object.values(err.errors).map(val => val.message);
     error = {
@@ -16,7 +13,6 @@ const errorHandler = (err, req, res, next) => {
     };
   }
 
-  // Mongoose重复键错误
   if (err.code === 11000) {
     const field = Object.keys(err.keyValue)[0];
     const value = err.keyValue[field];
@@ -27,7 +23,6 @@ const errorHandler = (err, req, res, next) => {
     };
   }
 
-  // Mongoose错误的ObjectId
   if (err.name === 'CastError') {
     error = {
       statusCode: 404,
@@ -36,7 +31,6 @@ const errorHandler = (err, req, res, next) => {
     };
   }
 
-  // JWT错误
   if (err.name === 'JsonWebTokenError') {
     error = {
       statusCode: 401,
@@ -45,7 +39,6 @@ const errorHandler = (err, req, res, next) => {
     };
   }
 
-  // JWT过期错误
   if (err.name === 'TokenExpiredError') {
     error = {
       statusCode: 401,
@@ -54,7 +47,6 @@ const errorHandler = (err, req, res, next) => {
     };
   }
 
-  // Multer文件上传错误
   if (err.code === 'LIMIT_FILE_SIZE') {
     error = {
       statusCode: 400,
@@ -63,7 +55,6 @@ const errorHandler = (err, req, res, next) => {
     };
   }
 
-  // 语法错误
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
     error = {
       statusCode: 400,
@@ -72,7 +63,6 @@ const errorHandler = (err, req, res, next) => {
     };
   }
 
-  // 默认错误
   const statusCode = error.statusCode || err.statusCode || 500;
   const message = error.message || '服务器内部错误';
   const code = error.code || 'INTERNAL_SERVER_ERROR';
@@ -85,12 +75,10 @@ const errorHandler = (err, req, res, next) => {
   });
 };
 
-// 异步错误捕获包装器
 const asyncHandler = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
 };
 
-// 404处理中间件
 const notFound = (req, res, next) => {
   const error = new Error(`路径 ${req.originalUrl} 未找到`);
   error.statusCode = 404;
@@ -98,19 +86,14 @@ const notFound = (req, res, next) => {
   next(error);
 };
 
-// API响应格式化中间件
 const formatResponse = (req, res, next) => {
-  // 保存原始的json方法
   const originalJson = res.json;
 
-  // 重写json方法
   res.json = function(data) {
-    // 如果数据已经是标准格式，直接返回
     if (data && (data.hasOwnProperty('success') || data.hasOwnProperty('error'))) {
       return originalJson.call(this, data);
     }
 
-    // 格式化成功响应
     const formattedResponse = {
       success: true,
       data: data,
@@ -125,7 +108,6 @@ const formatResponse = (req, res, next) => {
   next();
 };
 
-// 自定义错误类
 class AppError extends Error {
   constructor(message, statusCode, code) {
     super(message);
@@ -137,7 +119,6 @@ class AppError extends Error {
   }
 }
 
-// 常用错误创建函数
 const createError = {
   badRequest: (message = '请求参数错误', code = 'BAD_REQUEST') => 
     new AppError(message, 400, code),

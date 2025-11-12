@@ -33,61 +33,61 @@ const SystemAlerts = () => {
     const mockAlerts = [
       {
         id: 1,
-        name: '失败登录警报',
+        name: t('admin.alerts.failedLoginAlert') || '失败登录警报',
         type: 'security',
         condition: 'failed_login_attempts',
         threshold: 5,
         enabled: true,
         recipients: ['admin@system.com', 'security@system.com'],
-        description: '当用户连续失败登录超过阈值时触发',
+        description: t('admin.alerts.failedLoginDesc') || '当用户连续失败登录超过阈值时触发',
         lastTriggered: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
         triggerCount: 3
       },
       {
         id: 2,
-        name: '系统资源警报',
+        name: t('admin.alerts.systemResourceAlert') || '系统资源警报',
         type: 'system',
         condition: 'high_memory_usage',
         threshold: 85,
         enabled: true,
         recipients: ['admin@system.com', 'ops@system.com'],
-        description: '当系统内存使用率超过85%时触发',
+        description: t('admin.alerts.systemResourceDesc') || '当系统内存使用率超过85%时触发',
         lastTriggered: null,
         triggerCount: 0
       },
       {
         id: 3,
-        name: '用户注册激增',
+        name: t('admin.alerts.userSurgeAlert') || '用户注册激增',
         type: 'user',
         condition: 'high_registration_rate',
         threshold: 50,
         enabled: false,
         recipients: ['admin@system.com'],
-        description: '当每小时注册用户超过50人时触发',
+        description: t('admin.alerts.userSurgeDesc') || '当每小时注册用户超过50人时触发',
         lastTriggered: null,
         triggerCount: 0
       },
       {
         id: 4,
-        name: '数据库连接失败',
+        name: t('admin.alerts.dbConnectionAlert') || '数据库连接失败',
         type: 'system',
         condition: 'database_connection_failed',
         threshold: 1,
         enabled: true,
         recipients: ['admin@system.com', 'ops@system.com', 'tech@system.com'],
-        description: '数据库连接失败时立即触发',
+        description: t('admin.alerts.dbConnectionDesc') || '数据库连接失败时立即触发',
         lastTriggered: null,
         triggerCount: 0
       },
       {
         id: 5,
-        name: '可疑IP活动',
+        name: t('admin.alerts.suspiciousIPAlert') || '可疑IP活动',
         type: 'security',
         condition: 'suspicious_ip_activity',
         threshold: 10,
         enabled: true,
         recipients: ['security@system.com', 'admin@system.com'],
-        description: '当同一IP在短时间内有异常请求时触发',
+        description: t('admin.alerts.suspiciousIPDesc') || '当同一IP在短时间内有异常请求时触发',
         lastTriggered: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
         triggerCount: 1
       }
@@ -129,7 +129,8 @@ const SystemAlerts = () => {
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return t('common.never') || '从未';
     const date = new Date(timestamp);
-    return date.toLocaleString('zh-CN', {
+    const locale = t('common.locale') || 'zh-CN';
+    return date.toLocaleString(locale, {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -215,7 +216,9 @@ const SystemAlerts = () => {
                       <div>
                         <h3 className="alert-title">{alert.name}</h3>
                         <span className={`type-badge ${getTypeColor(alert.type)}`}>
-                          {alert.type === 'security' ? '安全' : alert.type === 'system' ? '系统' : '用户'}
+                          {alert.type === 'security' ? t('admin.alerts.typeSecurity') || '安全' : 
+                           alert.type === 'system' ? t('admin.alerts.typeSystem') || '系统' : 
+                           t('admin.alerts.typeUser') || '用户'}
                         </span>
                       </div>
                     </div>
@@ -241,7 +244,7 @@ const SystemAlerts = () => {
                       </div>
                       <div className="detail-item">
                         <span className="detail-label">📧 {t('admin.alerts.recipients') || '接收人'}:</span>
-                        <span className="detail-value">{alert.recipients.length} 人</span>
+                        <span className="detail-value">{alert.recipients.length} {t('admin.alerts.people') || '人'}</span>
                       </div>
                       <div className="detail-item">
                         <span className="detail-label">🔔 {t('admin.alerts.lastTriggered') || '最后触发'}:</span>
@@ -249,7 +252,7 @@ const SystemAlerts = () => {
                       </div>
                       <div className="detail-item">
                         <span className="detail-label">📈 {t('admin.alerts.triggerCount') || '触发次数'}:</span>
-                        <span className="detail-value">{alert.triggerCount} 次</span>
+                        <span className="detail-value">{alert.triggerCount} {t('admin.alerts.times') || '次'}</span>
                       </div>
                     </div>
 

@@ -8,10 +8,8 @@ const { authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-// 所有管理员路由都需要管理员权限
 router.use(authorize('admin'));
 
-// 验证错误处理
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -26,26 +24,18 @@ const handleValidationErrors = (req, res, next) => {
   next();
 };
 
-// ==================== 系统统计和仪表板 ====================
-
-// @desc    获取系统总览统计
-// @route   GET /api/admin/dashboard
-// @access  Private (Admin only)
 router.get('/dashboard', asyncHandler(async (req, res) => {
-  // 计算时间范围
   const now = new Date();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  
-  // 上月同期
+
   const lastMonth = new Date();
   lastMonth.setMonth(lastMonth.getMonth() - 1);
   const lastMonthStart = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1);
   const lastMonthEnd = new Date(lastMonth.getFullYear(), lastMonth.getMonth() + 1, 0);
-  
-  // 本月
+
   const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   
   const [
@@ -56,7 +46,6 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
     recentActivity,
     pendingApprovals
   ] = await Promise.all([
-    // 总用户统计
     User.aggregate([
       {
         $group: {
@@ -76,7 +65,6 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
       }
     ]),
 
-    // 总请求统计
     Request.aggregate([
       {
         $group: {
@@ -86,7 +74,6 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
       }
     ]),
 
-    // 今日统计
     Promise.all([
       User.countDocuments({ createdAt: { $gte: today, $lt: tomorrow } }),
       Request.countDocuments({ createdAt: { $gte: today, $lt: tomorrow } }),
@@ -100,7 +87,6 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
       })
     ]),
 
-    // 月度增长统计
     Promise.all([
       User.countDocuments({ createdAt: { $gte: thisMonthStart } }),
       User.countDocuments({ createdAt: { $gte: lastMonthStart, $lt: lastMonthEnd } }),
@@ -116,7 +102,6 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
       })
     ]),
 
-    // 最近活动（混合用户注册和请求状态变更）
     Promise.all([
       User.find({ createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } })
         .sort({ createdAt: -1 })
@@ -136,11 +121,9 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
         .select('title status category createdAt matchedAt completedAt requester volunteer')
     ]),
 
-    // 待审核项目
     Request.countDocuments({ status: 'pending' })
   ]);
 
-  // 格式化用户统计
   const userStatsFormatted = {
     total: 0,
     pin: { total: 0, active: 0, suspended: 0 },
@@ -157,7 +140,6 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
     };
   });
 
-  // 格式化请求统计
   const requestStatsFormatted = {
     total: 0,
     pending: 0,
@@ -172,27 +154,22 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
     requestStatsFormatted[stat._id] = stat.count;
   });
 
-  // 解构今日统计数据
   const [todayUsers, todayRequests, todayMatched, todayCompleted] = todayStats;
 
-  // 解构月度增长数据
   const [
     thisMonthUsers, lastMonthUsers, 
     thisMonthRequests, lastMonthRequests,
     thisMonthCompleted, lastMonthCompleted
   ] = monthlyGrowth;
 
-  // 计算增长率
   const calculateGrowth = (current, previous) => {
     if (previous === 0) return current > 0 ? 100 : 0;
     return Math.round(((current - previous) / previous) * 100);
   };
 
-  // 格式化最近活动
   const [recentUsers, recentRequests] = recentActivity;
   const combinedActivity = [];
 
-  // 添加用户注册活动
   recentUsers.forEach(user => {
     combinedActivity.push({
       type: 'user_registration',
@@ -205,7 +182,6 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
     });
   });
 
-  // 添加请求活动
   recentRequests.forEach(request => {
     let title, icon, description;
     
@@ -242,14 +218,12 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
     });
   });
 
-  // 按时间排序并限制数量
   combinedActivity.sort((a, b) => new Date(b.time) - new Date(a.time));
   const limitedActivity = combinedActivity.slice(0, 10);
 
   res.json({
     success: true,
     data: {
-      // 主要统计卡片
       stats: {
         totalUsers: {
           current: userStatsFormatted.total,
@@ -268,24 +242,21 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
         },
         pendingApprovals: {
           current: pendingApprovals,
-          growth: 0, // 待审核项不显示增长
+          growth: 0, 
           trend: 'neutral'
         }
       },
-      
-      // 详细统计
+
       users: userStatsFormatted,
       requests: requestStatsFormatted,
-      
-      // 今日统计
+
       today: {
         newUsers: todayUsers,
         newRequests: todayRequests,
         matched: todayMatched,
         completed: todayCompleted
       },
-      
-      // 月度增长
+
       monthlyGrowth: {
         users: {
           current: thisMonthUsers,
@@ -303,11 +274,9 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
           growth: calculateGrowth(thisMonthCompleted, lastMonthCompleted)
         }
       },
-      
-      // 最近活动
+
       recentActivity: limitedActivity,
-      
-      // 系统健康状态
+
       systemHealth: {
         totalUsers: userStatsFormatted.total,
         activeUsers: userStatsFormatted.pin.active + userStatsFormatted.csr.active,
@@ -321,24 +290,18 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
   });
 }));
 
-// @desc    获取仪表板统计卡片数据
-// @route   GET /api/admin/stats-cards
-// @access  Private (Admin only)
 router.get('/stats-cards', asyncHandler(async (req, res) => {
-  // 计算时间范围
   const now = new Date();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  
-  // 上月同期
+
   const lastMonth = new Date();
   lastMonth.setMonth(lastMonth.getMonth() - 1);
   const lastMonthStart = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1);
   const lastMonthEnd = new Date(lastMonth.getFullYear(), lastMonth.getMonth() + 1, 0);
-  
-  // 本月
+
   const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const [
@@ -348,22 +311,17 @@ router.get('/stats-cards', asyncHandler(async (req, res) => {
     pendingApprovals,
     monthlyGrowthData
   ] = await Promise.all([
-    // 总用户数
     User.countDocuments(),
-    
-    // 活跃请求数（待匹配 + 已匹配）
+
     Request.countDocuments({ status: { $in: ['pending', 'matched'] } }),
-    
-    // 今日匹配数
+
     Request.countDocuments({ 
       status: 'matched', 
       matchedAt: { $gte: today, $lt: tomorrow } 
     }),
-    
-    // 待审核数
+
     Request.countDocuments({ status: 'pending' }),
-    
-    // 月度增长数据
+
     Promise.all([
       User.countDocuments({ createdAt: { $gte: thisMonthStart } }),
       User.countDocuments({ createdAt: { $gte: lastMonthStart, $lt: lastMonthEnd } }),
@@ -380,20 +338,17 @@ router.get('/stats-cards', asyncHandler(async (req, res) => {
     ])
   ]);
 
-  // 解构月度增长数据
   const [
     thisMonthUsers, lastMonthUsers,
     thisMonthRequests, lastMonthRequests,
     thisMonthMatched, lastMonthMatched
   ] = monthlyGrowthData;
 
-  // 计算增长率
   const calculateGrowth = (current, previous) => {
     if (previous === 0) return current > 0 ? 100 : 0;
     return Math.round(((current - previous) / previous) * 100);
   };
 
-  // 格式化卡片数据
   const statsCards = [
     {
       title: '总用户数',
@@ -425,7 +380,7 @@ router.get('/stats-cards', asyncHandler(async (req, res) => {
     {
       title: '待审核',
       value: pendingApprovals,
-      growth: 0, // 待审核不显示增长
+      growth: 0, 
       trend: 'neutral',
       icon: 'clock',
       color: 'orange',
@@ -443,9 +398,6 @@ router.get('/stats-cards', asyncHandler(async (req, res) => {
   });
 }));
 
-// @desc    获取最近活动
-// @route   GET /api/admin/recent-activity
-// @access  Private (Admin only)
 router.get('/recent-activity', 
   [
     query('limit').optional().isInt({ min: 1, max: 50 }).withMessage('限制数量必须在1-50之间')
@@ -456,20 +408,17 @@ router.get('/recent-activity',
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     const [recentUsers, recentRequests, recentMatches] = await Promise.all([
-      // 新用户注册
       User.find({ createdAt: { $gte: twentyFourHoursAgo } })
         .sort({ createdAt: -1 })
         .limit(Math.ceil(limit / 3))
         .select('name email userType createdAt'),
 
-      // 新请求
       Request.find({ createdAt: { $gte: twentyFourHoursAgo } })
         .populate('requester', 'name email')
         .sort({ createdAt: -1 })
         .limit(Math.ceil(limit / 3))
         .select('title category createdAt requester'),
 
-      // 最近匹配和完成
       Request.find({ 
         $or: [
           { status: 'matched', matchedAt: { $gte: twentyFourHoursAgo } },
@@ -483,10 +432,8 @@ router.get('/recent-activity',
         .select('title status matchedAt completedAt requester volunteer')
     ]);
 
-    // 格式化活动数据
     const activities = [];
 
-    // 添加用户注册活动
     recentUsers.forEach(user => {
       activities.push({
         id: `user_${user._id}`,
@@ -505,7 +452,6 @@ router.get('/recent-activity',
       });
     });
 
-    // 添加新请求活动
     recentRequests.forEach(request => {
       activities.push({
         id: `request_${request._id}`,
@@ -525,7 +471,6 @@ router.get('/recent-activity',
       });
     });
 
-    // 添加匹配和完成活动
     recentMatches.forEach(request => {
       if (request.status === 'matched') {
         activities.push({
@@ -561,7 +506,6 @@ router.get('/recent-activity',
       }
     });
 
-    // 按时间排序并限制数量
     activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     const limitedActivities = activities.slice(0, limit);
 
@@ -577,7 +521,6 @@ router.get('/recent-activity',
   })
 );
 
-// 辅助函数：计算时间差
 function getTimeAgo(date) {
   const now = new Date();
   const diffMs = now - new Date(date);
@@ -592,9 +535,6 @@ function getTimeAgo(date) {
   return date.toLocaleDateString('zh-CN');
 }
 
-// @desc    获取详细报告
-// @route   GET /api/admin/reports
-// @access  Private (Admin only)
 router.get('/reports',
   [
     query('period').optional().isIn(['day', 'week', 'month', 'year']).withMessage('时间段必须是 day, week, month 或 year'),
@@ -604,8 +544,7 @@ router.get('/reports',
   handleValidationErrors,
   asyncHandler(async (req, res) => {
     const { period = 'month', startDate, endDate } = req.query;
-    
-    // 计算时间范围
+
     let start, end;
     const now = new Date();
     
@@ -641,7 +580,6 @@ router.get('/reports',
       topVolunteers,
       topRequesters
     ] = await Promise.all([
-      // 用户注册趋势
       User.aggregate([
         {
           $match: {
@@ -661,7 +599,6 @@ router.get('/reports',
         { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
       ]),
 
-      // 请求分类统计
       Request.aggregate([
         {
           $match: {
@@ -681,7 +618,6 @@ router.get('/reports',
         }
       ]),
 
-      // 紧急程度统计
       Request.aggregate([
         {
           $match: {
@@ -696,7 +632,6 @@ router.get('/reports',
         }
       ]),
 
-      // 完成率统计
       Request.aggregate([
         {
           $match: {
@@ -726,7 +661,6 @@ router.get('/reports',
         }
       ]),
 
-      // 活跃志愿者
       User.aggregate([
         {
           $match: {
@@ -750,7 +684,6 @@ router.get('/reports',
         }
       ]),
 
-      // 活跃请求者
       User.aggregate([
         {
           $match: {
@@ -790,14 +723,9 @@ router.get('/reports',
   })
 );
 
-// ==================== 用户管理 ====================
-
-// @desc    获取所有用户列表（管理员视角）
-// @route   GET /api/admin/users
-// @access  Private (Admin only)
 router.get('/users', asyncHandler(async (req, res) => {
   const users = await User.find({ 
-    status: { $ne: 'deleted' } // 不返回已删除的用户
+    status: { $ne: 'deleted' }
   }).select('-password').sort({ createdAt: -1 });
   
   res.json({
@@ -806,9 +734,6 @@ router.get('/users', asyncHandler(async (req, res) => {
   });
 }));
 
-// @desc    获取用户详细信息（管理员视角）
-// @route   GET /api/admin/users/:id
-// @access  Private (Admin only)
 router.get('/users/:id', asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id).select('-password');
 
@@ -816,7 +741,6 @@ router.get('/users/:id', asyncHandler(async (req, res) => {
     throw createError.notFound('用户未找到');
   }
 
-  // 获取用户相关的请求
   const userRequests = await Request.find({
     $or: [
       { requester: user._id },
@@ -835,9 +759,6 @@ router.get('/users/:id', asyncHandler(async (req, res) => {
   });
 }));
 
-// @desc    批量操作用户
-// @route   POST /api/admin/users/batch
-// @access  Private (Admin only)
 router.post('/users/batch',
   [
     body('action').isIn(['suspend', 'activate', 'delete']).withMessage('操作必须是 suspend, activate 或 delete'),
@@ -848,7 +769,6 @@ router.post('/users/batch',
   asyncHandler(async (req, res) => {
     const { action, userIds } = req.body;
 
-    // 检查是否包含管理员账户
     const users = await User.find({ _id: { $in: userIds } });
     const hasAdmin = users.some(user => user.userType === 'admin');
 
@@ -886,11 +806,6 @@ router.post('/users/batch',
   })
 );
 
-// ==================== 请求管理 ====================
-
-// @desc    获取所有请求列表（管理员视角）
-// @route   GET /api/admin/requests
-// @access  Private (Admin only)
 router.get('/requests', asyncHandler(async (req, res) => {
   const requests = await Request.find({})
     .populate('requester', 'name email phone address userType')
@@ -904,9 +819,6 @@ router.get('/requests', asyncHandler(async (req, res) => {
   });
 }));
 
-// @desc    强制完成请求
-// @route   POST /api/admin/requests/:id/force-complete
-// @access  Private (Admin only)
 router.post('/requests/:id/force-complete', asyncHandler(async (req, res) => {
   const request = await Request.findById(req.params.id);
 
@@ -925,9 +837,6 @@ router.post('/requests/:id/force-complete', asyncHandler(async (req, res) => {
   });
 }));
 
-// @desc    管理员取消请求
-// @route   POST /api/admin/requests/:id/cancel
-// @access  Private (Admin only)
 router.post('/requests/:id/cancel',
   [
     body('reason').trim().notEmpty().withMessage('取消原因不能为空')
@@ -956,13 +865,7 @@ router.post('/requests/:id/cancel',
   })
 );
 
-// ==================== 系统设置 ====================
-
-// @desc    获取系统设置
-// @route   GET /api/admin/settings
-// @access  Private (Admin only)
 router.get('/settings', asyncHandler(async (req, res) => {
-  // 这里可以从配置文件或数据库获取系统设置
   const settings = {
     system: {
       maintenance: false,
@@ -987,10 +890,6 @@ router.get('/settings', asyncHandler(async (req, res) => {
     data: { settings }
   });
 }));
-
-// @desc    更新系统设置
-// @route   PUT /api/admin/settings
-// @access  Private (Admin only)
 router.put('/settings',
   [
     body('system.maintenance').optional().isBoolean(),
@@ -1000,8 +899,6 @@ router.put('/settings',
   ],
   handleValidationErrors,
   asyncHandler(async (req, res) => {
-    // 这里应该将设置保存到配置文件或数据库
-    // 目前仅返回成功响应
     
     res.json({
       success: true,
@@ -1011,11 +908,6 @@ router.put('/settings',
   })
 );
 
-// ==================== 数据导出 ====================
-
-// @desc    导出数据
-// @route   GET /api/admin/export
-// @access  Private (Admin only)
 router.get('/export',
   [
     query('type').isIn(['users', 'requests', 'all']).withMessage('导出类型必须是 users, requests 或 all'),
@@ -1045,7 +937,6 @@ router.get('/export',
     }
 
     if (format === 'csv') {
-      // 这里应该实现CSV导出逻辑
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', `attachment; filename="${type}_${Date.now()}.csv"`);
       res.send('CSV导出功能待实现');

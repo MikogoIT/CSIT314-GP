@@ -1,6 +1,6 @@
 /* PIN Dashboard - 现代化UI设计 */
 
-/* 主容器 */
+/* 主容�?*/
 .pin-dashboard-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #f8faff 0%, #e6f3ff 100%);
@@ -736,7 +736,7 @@
   letter-spacing: 0.5px;
 }
 
-/* 匹配的志愿者卡片 */
+/* 匹配的志愿者卡�?*/
 .matched-volunteer-card {
   display: flex;
   align-items: center;
@@ -855,7 +855,7 @@
   font-size: 16px;
 }
 
-/* 空状态设计 */
+/* 空状态设�?*/
 .pin-empty-state {
   text-align: center;
   padding: 60px 40px;
@@ -970,7 +970,7 @@
   50% { transform: translateY(-4px); }
 }
 
-/* 侧边栏设计 */
+/* 侧边栏设�?*/
 .pin-sidebar {
   display: flex;
   flex-direction: column;
@@ -1023,7 +1023,7 @@
   padding: 24px;
 }
 
-/* 快速操作网格 */
+/* 快速操作网�?*/
 .quick-actions-grid {
   display: flex;
   flex-direction: column;
@@ -1153,7 +1153,7 @@
   margin: 0;
 }
 
-/* 响应式设计 */
+/* 响应式设�?*/
 @media (max-width: 1024px) {
   .pin-content-grid {
     grid-template-columns: 1fr;
@@ -1271,4 +1271,277 @@
     flex-direction: column;
     gap: 12px;
   }
+}
+
+/* 申请者列表样�?*/
+.interested-volunteers-section {
+  margin-top: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-radius: 12px;
+  border: 2px solid #bae6fd;
+}
+
+.interested-volunteers-section .section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0369a1;
+  margin-bottom: 12px;
+}
+
+.volunteers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.volunteer-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e0f2fe;
+  transition: all 0.2s ease;
+}
+
+.volunteer-item:hover {
+  border-color: #0ea5e9;
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.1);
+  transform: translateY(-1px);
+}
+
+.volunteer-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.volunteer-icon {
+  font-size: 20px;
+}
+
+.volunteer-name {
+  font-weight: 500;
+  color: #0c4a6e;
+}
+
+.btn-select-volunteer {
+  padding: 6px 16px;
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-select-volunteer:hover {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+}
+
+.btn-select-volunteer:active {
+  transform: translateY(0);
+}
+
+/* 完成按钮样式 */
+.pin-action-btn.complete {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.pin-action-btn.complete:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* 高亮申请者数�?*/
+.stat-item.highlight {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-color: #fbbf24;
+}
+
+.stat-item.highlight .stat-icon {
+  color: #d97706;
+}
+
+.stat-item.highlight .stat-number {
+  color: #92400e;
+}
+
+.stat-item.highlight .stat-label {
+  color: #78350f;
+}
+
+/* Rating Modal Styles */
+.rating-modal {
+  max-width: 600px;
+  width: 90%;
+}
+
+.rating-section {
+  margin-bottom: 24px;
+}
+
+.star-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.star-btn {
+  background: none;
+  border: none;
+  font-size: 40px;
+  color: #d1d5db;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  line-height: 1;
+}
+
+.star-btn:hover {
+  color: #fbbf24;
+  transform: scale(1.15);
+}
+
+.star-btn.active {
+  color: #fbbf24;
+}
+
+.rating-text {
+  margin-left: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.feedback-section {
+  margin-bottom: 24px;
+}
+
+.feedback-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.3s ease;
+  margin-top: 8px;
+}
+
+.feedback-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.char-count {
+  text-align: right;
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+.form-label .required {
+  color: #ef4444;
+  margin-left: 4px;
+}
+
+.form-label .optional {
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.modal-footer .btn {
+  min-width: 100px;
+}
+
+/* ɸѡ������ؼ���ʽ */
+.pin-filters-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.filter-icon {
+  font-size: 16px;
+}
+
+.filter-select {
+  padding: 8px 16px;
+  border: 2px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  background: white;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 150px;
+}
+
+.filter-select:hover {
+  border-color: #3b82f6;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-results {
+  margin-left: auto;
+  padding: 8px 16px;
+  background: white;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #64748b;
+  border: 2px solid #e2e8f0;
+}
+
+.filter-results strong {
+  color: #3b82f6;
+  font-weight: 600;
 }

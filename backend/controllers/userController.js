@@ -3,14 +3,6 @@ const Request = require('../models/Request');
 const Shortlist = require('../models/Shortlist');
 const { asyncHandler, createError } = require('../middleware/errorHandler');
 
-/**
- * Control Layer - 用户控制器
- * 处理用户管理相关的业务逻辑
- */
-
-// @desc    获取用户列表
-// @route   GET /api/users
-// @access  Private (Admin only)
 exports.getUsers = asyncHandler(async (req, res) => {
   const {
     page = 1,
@@ -22,13 +14,11 @@ exports.getUsers = asyncHandler(async (req, res) => {
     sortOrder = 'desc'
   } = req.query;
 
-  // 构建查询条件
   const query = {};
   
   if (userType) query.userType = userType;
   if (status) query.status = status;
 
-  // 文本搜索
   if (search) {
     query.$or = [
       { name: { $regex: search, $options: 'i' } },
@@ -37,14 +27,11 @@ exports.getUsers = asyncHandler(async (req, res) => {
     ];
   }
 
-  // 分页参数
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
-  // 排序参数
   const sort = {};
   sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
-  // 执行查询
   const [users, total] = await Promise.all([
     User.find(query)
       .select('-password')
@@ -68,9 +55,6 @@ exports.getUsers = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    获取单个用户信息
-// @route   GET /api/users/:id
-// @access  Private (Owner or Admin)
 exports.getUserById = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id).select('-password');
 
@@ -78,7 +62,6 @@ exports.getUserById = asyncHandler(async (req, res) => {
     throw createError.notFound('用户未找到');
   }
 
-  // 权限检查
   if (req.user.userType !== 'admin' && req.user._id.toString() !== req.params.id) {
     throw createError.forbidden('您只能查看自己的信息');
   }
@@ -89,9 +72,6 @@ exports.getUserById = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    更新用户状态
-// @route   PUT /api/users/:id/status
-// @access  Private (Admin only)
 exports.updateUserStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
   
@@ -101,7 +81,6 @@ exports.updateUserStatus = asyncHandler(async (req, res) => {
     throw createError.notFound('用户未找到');
   }
 
-  // 不能修改管理员状态
   if (user.userType === 'admin') {
     throw createError.forbidden('不能修改管理员账户状态');
   }
@@ -116,9 +95,6 @@ exports.updateUserStatus = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    删除用户
-// @route   DELETE /api/users/:id
-// @access  Private (Admin only)
 exports.deleteUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
 
@@ -126,12 +102,10 @@ exports.deleteUser = asyncHandler(async (req, res) => {
     throw createError.notFound('用户未找到');
   }
 
-  // 不能删除管理员账户
   if (user.userType === 'admin') {
     throw createError.forbidden('不能删除管理员账户');
   }
 
-  // 检查用户是否有相关请求
   const userRequests = await Request.countDocuments({
     $or: [
       { requester: user._id },
@@ -140,7 +114,6 @@ exports.deleteUser = asyncHandler(async (req, res) => {
   });
 
   if (userRequests > 0) {
-    // 软删除：更新状态而不是物理删除
     user.status = 'deleted';
     await user.save();
     
@@ -149,7 +122,6 @@ exports.deleteUser = asyncHandler(async (req, res) => {
       message: `用户已被标记为删除（该用户有 ${userRequests} 个相关请求）`
     });
   } else {
-    // 物理删除
     await user.remove();
     
     res.json({
@@ -159,9 +131,6 @@ exports.deleteUser = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    获取用户统计信息
-// @route   GET /api/users/:id/stats
-// @access  Private (Owner or Admin)
 exports.getUserStats = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
 
@@ -169,14 +138,12 @@ exports.getUserStats = asyncHandler(async (req, res) => {
     throw createError.notFound('用户未找到');
   }
 
-  // 权限检查
   if (req.user.userType !== 'admin' && req.user._id.toString() !== req.params.id) {
     throw createError.forbidden('您只能查看自己的统计信息');
   }
 
   let stats = { ...user.stats.toObject() };
 
-  // 获取详细统计
   if (user.userType === 'pin') {
     const requestStats = await Request.aggregate([
       { $match: { requester: user._id } },
@@ -228,11 +195,6 @@ exports.getUserStats = asyncHandler(async (req, res) => {
   });
 });
 
-// ==================== 收藏夹相关控制器 ====================
-
-// @desc    获取用户收藏夹
-// @route   GET /api/users/shortlist
-// @access  Private (CSR users only)
 exports.getShortlist = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
   
@@ -267,20 +229,15 @@ exports.getShortlist = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    添加到收藏夹
-// @route   POST /api/users/shortlist/:requestId
-// @access  Private (CSR users only)
 exports.addToShortlist = asyncHandler(async (req, res) => {
   const { notes, tags } = req.body;
   const requestId = req.params.requestId;
 
-  // 检查请求是否存在
   const request = await Request.findById(requestId);
   if (!request) {
     throw createError.notFound('请求未找到');
   }
 
-  // 检查是否已收藏
   const existingShortlist = await Shortlist.findOne({
     user: req.user._id,
     request: requestId
@@ -297,7 +254,6 @@ exports.addToShortlist = asyncHandler(async (req, res) => {
     tags
   });
 
-  // 更新请求的收藏统计
   await Request.findByIdAndUpdate(requestId, {
     $inc: { 'stats.shortlistCount': 1 }
   });
@@ -313,9 +269,6 @@ exports.addToShortlist = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    从收藏夹移除
-// @route   DELETE /api/users/shortlist/:requestId
-// @access  Private (CSR users only)
 exports.removeFromShortlist = asyncHandler(async (req, res) => {
   const requestId = req.params.requestId;
 
@@ -328,7 +281,6 @@ exports.removeFromShortlist = asyncHandler(async (req, res) => {
     throw createError.notFound('收藏项未找到');
   }
 
-  // 更新请求的收藏统计
   await Request.findByIdAndUpdate(requestId, {
     $inc: { 'stats.shortlistCount': -1 }
   });
@@ -339,9 +291,6 @@ exports.removeFromShortlist = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    检查是否已收藏
-// @route   GET /api/users/shortlist/:requestId/check
-// @access  Private (CSR users only)
 exports.checkShortlist = asyncHandler(async (req, res) => {
   const isShortlisted = await Shortlist.exists({
     user: req.user._id,
@@ -354,9 +303,6 @@ exports.checkShortlist = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    更新收藏项备注
-// @route   PUT /api/users/shortlist/:requestId
-// @access  Private (CSR users only)
 exports.updateShortlist = asyncHandler(async (req, res) => {
   const { notes, tags } = req.body;
   const requestId = req.params.requestId;
@@ -378,17 +324,11 @@ exports.updateShortlist = asyncHandler(async (req, res) => {
   });
 });
 
-// ==================== 历史记录相关控制器 ====================
-
-// @desc    获取用户历史记录
-// @route   GET /api/users/history
-// @access  Private
 exports.getHistory = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, category, startDate, endDate } = req.query;
   
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
-  // 根据用户类型构建不同的查询
   let query = {};
   
   if (req.user.userType === 'pin') {
@@ -403,7 +343,6 @@ exports.getHistory = asyncHandler(async (req, res) => {
     };
   }
 
-  // 添加筛选条件
   if (category) query.category = category;
   
   if (startDate || endDate) {

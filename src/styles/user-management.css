@@ -149,7 +149,8 @@
   background: var(--bg-primary);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: visible;
 }
 
 .users-table {
@@ -166,10 +167,20 @@
   border-bottom: 1px solid var(--border-color);
 }
 
+.users-table th:last-child {
+  min-width: 300px;
+  width: 300px;
+}
+
 .users-table td {
   padding: var(--spacing-lg);
   border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
+}
+
+.users-table td:last-child {
+  min-width: 300px;
+  width: 300px;
 }
 
 .users-table tr:last-child td {
@@ -267,12 +278,15 @@
 .action-buttons {
   display: flex;
   gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  min-width: 280px;
 }
 
 .btn-sm {
   padding: var(--spacing-xs) var(--spacing-sm);
   font-size: var(--text-xs);
   border-radius: var(--radius-sm);
+  white-space: nowrap;
 }
 
 .btn-info {
@@ -455,7 +469,11 @@
   }
   
   .users-table {
-    min-width: 800px;
+    min-width: 1000px;
+  }
+  
+  .action-buttons {
+    min-width: 280px;
   }
 }
 
@@ -477,6 +495,21 @@
   .filters-section {
     flex-direction: column;
     gap: var(--spacing-md);
+  }
+  
+  .users-table {
+    min-width: 1000px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    min-width: 200px;
+  }
+  
+  .action-buttons .btn-sm {
+    width: 100%;
+    text-align: center;
   }
   
   .search-box {

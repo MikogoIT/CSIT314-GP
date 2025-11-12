@@ -1,5 +1,3 @@
-// 导航组件
-// src/components/Layout/Navbar.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -16,7 +14,6 @@ const Navbar = ({ userType, user }) => {
     window.location.href = '/login';
   };
 
-  // 根据用户类型确定dashboard链接
   const getDashboardLink = () => {
     switch (userType) {
       case 'pin':

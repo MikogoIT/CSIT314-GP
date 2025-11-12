@@ -1,13 +1,4 @@
-/**
- * Admin Controller - BCE架构 Control层
- * 
- * 管理员控制器，处理两种管理员角色的业务逻辑：
- * 1. System Admin (系统管理员) - 技术保障与系统维护
- * 2. Platform Manager (平台管理者) - 业务运营与战略分析
- * 
- * 注意：userType 直接使用 'system_admin' 和 'platform_manager'，
- *      不再有通用的 'admin' 类型
- */
+
 
 const User = require('../models/User');
 const Request = require('../models/Request');
@@ -15,10 +6,9 @@ const Category = require('../models/Category');
 const Shortlist = require('../models/Shortlist');
 const { createError } = require('../middleware/errorHandler');
 
-// ==================== 通用管理员功能 ====================
 
 /**
- * @desc    获取系统总览统计 (Both roles)
+ * @desc    
  * @access  Private (Admin)
  */
 const getDashboardStats = async (req, res) => {
@@ -43,7 +33,6 @@ const getDashboardStats = async (req, res) => {
     recentActivity,
     pendingApprovals
   ] = await Promise.all([
-    // 总用户统计
     User.aggregate([
       {
         $group: {
@@ -63,7 +52,6 @@ const getDashboardStats = async (req, res) => {
       }
     ]),
 
-    // 总请求统计
     Request.aggregate([
       {
         $group: {
@@ -73,7 +61,6 @@ const getDashboardStats = async (req, res) => {
       }
     ]),
 
-    // 今日统计
     Promise.all([
       User.countDocuments({ createdAt: { $gte: today, $lt: tomorrow } }),
       Request.countDocuments({ createdAt: { $gte: today, $lt: tomorrow } }),
@@ -87,7 +74,6 @@ const getDashboardStats = async (req, res) => {
       })
     ]),
 
-    // 月度增长统计
     Promise.all([
       User.countDocuments({ createdAt: { $gte: thisMonthStart } }),
       User.countDocuments({ createdAt: { $gte: lastMonthStart, $lt: lastMonthEnd } }),
@@ -103,7 +89,6 @@ const getDashboardStats = async (req, res) => {
       })
     ]),
 
-    // 最近活动
     Promise.all([
       User.find({ createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } })
         .sort({ createdAt: -1 })
@@ -123,11 +108,9 @@ const getDashboardStats = async (req, res) => {
         .select('title status category createdAt matchedAt completedAt requester volunteer')
     ]),
 
-    // 待审核项目
     Request.countDocuments({ status: 'pending' })
   ]);
 
-  // 格式化用户统计
   const userStatsFormatted = {
     total: 0,
     pin: { total: 0, active: 0, suspended: 0 },
@@ -147,7 +130,6 @@ const getDashboardStats = async (req, res) => {
     }
   });
 
-  // 格式化请求统计
   const requestStatsFormatted = {
     total: 0,
     pending: 0,
@@ -234,13 +216,8 @@ const getDashboardStats = async (req, res) => {
   });
 };
 
-// ==================== System Admin 专属功能 ====================
-// 核心职责：技术保障与系统维护
-// 用户故事：#48 (配置警报), #50 (查看用户列表), #51 (监控登录), 
-//           #52 (停用账户), #55/#70 (创建/更新用户), #56 (文件限制)
-
 /**
- * @desc    获取所有用户列表 (#50)
+ * @desc    
  * @access  Private (System Admin only)
  */
 const getAllUsers = async (req, res) => {
@@ -293,22 +270,19 @@ const getAllUsers = async (req, res) => {
 };
 
 /**
- * @desc    创建新用户 (#55, #70)
+ * @desc    
  * @access  Private (System Admin only)
  */
 const createUser = async (req, res) => {
   const { email, userType } = req.body;
 
-  // 检查邮箱是否已存在
   const existingUser = await User.findOne({ email: email.toLowerCase() });
   if (existingUser) {
     throw createError('Email already registered', 400, 'EMAIL_EXISTS');
   }
 
-  // 创建用户
   const user = await User.create(req.body);
 
-  // 不返回密码
   const userResponse = user.toObject();
   delete userResponse.password;
 
@@ -320,23 +294,20 @@ const createUser = async (req, res) => {
 };
 
 /**
- * @desc    更新用户信息 (#70)
+ * @desc   
  * @access  Private (System Admin only)
  */
 const updateUser = async (req, res) => {
   const { userId } = req.params;
   const updates = req.body;
 
-  // 不允许通过此接口修改密码
   delete updates.password;
 
-  // 检查用户是否存在
   const user = await User.findById(userId);
   if (!user) {
     throw createError('User not found', 404, 'USER_NOT_FOUND');
   }
 
-  // 更新用户
   Object.assign(user, updates);
   await user.save();
 
@@ -351,7 +322,7 @@ const updateUser = async (req, res) => {
 };
 
 /**
- * @desc    停用/激活用户账户 (#52)
+ * @desc  
  * @access  Private (System Admin only)
  */
 const updateUserStatus = async (req, res) => {
@@ -367,7 +338,6 @@ const updateUserStatus = async (req, res) => {
     throw createError('User not found', 404, 'USER_NOT_FOUND');
   }
 
-  // 防止停用自己
   if (userId === req.user._id.toString()) {
     throw createError('Cannot modify your own account status', 403, 'SELF_MODIFICATION_DENIED');
   }
@@ -390,7 +360,7 @@ const updateUserStatus = async (req, res) => {
 };
 
 /**
- * @desc    删除用户 (物理删除)
+ * @desc    
  * @access  Private (System Admin only)
  */
 const deleteUser = async (req, res) => {
@@ -401,7 +371,6 @@ const deleteUser = async (req, res) => {
     throw createError('User not found', 404, 'USER_NOT_FOUND');
   }
 
-  // 防止删除自己
   if (userId === req.user._id.toString()) {
     throw createError('Cannot delete your own account', 403, 'SELF_DELETION_DENIED');
   }
@@ -415,7 +384,7 @@ const deleteUser = async (req, res) => {
 };
 
 /**
- * @desc    获取系统日志和活动监控 (#51)
+ * @desc    
  * @access  Private (System Admin only)
  */
 const getSystemLogs = async (req, res) => {
@@ -436,7 +405,6 @@ const getSystemLogs = async (req, res) => {
     if (endDate) query.createdAt.$lte = new Date(endDate);
   }
 
-  // 收集最近登录活动
   const recentLogins = await User.find({
     lastLogin: { $exists: true, $ne: null }
   })
@@ -444,7 +412,6 @@ const getSystemLogs = async (req, res) => {
     .limit(parseInt(limit))
     .select('name email userType lastLogin');
 
-  // 收集最近失败的操作
   const failedOperations = await User.find({
     status: 'suspended',
     'suspensionReason': { $exists: true }
@@ -467,14 +434,12 @@ const getSystemLogs = async (req, res) => {
 };
 
 /**
- * @desc    配置系统警报和通知 (#48)
+ * @desc    
  * @access  Private (System Admin only)
  */
 const configureAlerts = async (req, res) => {
   const { alertType, threshold, recipients, enabled } = req.body;
 
-  // 这里应该存储到配置表或环境变量中
-  // 暂时返回成功响应
   res.status(200).json({
     success: true,
     message: 'Alert configuration updated successfully',
@@ -490,18 +455,16 @@ const configureAlerts = async (req, res) => {
 };
 
 /**
- * @desc    设置文件上传限制 (#56)
+ * @desc    
  * @access  Private (System Admin only)
  */
 const setFileUploadLimits = async (req, res) => {
   const { maxFileSize, allowedTypes, maxFilesPerRequest } = req.body;
 
-  // 验证参数
   if (maxFileSize && (maxFileSize < 1 || maxFileSize > 100)) {
     throw createError('File size must be between 1MB and 100MB', 400, 'INVALID_FILE_SIZE');
   }
 
-  // 这里应该存储到配置表或环境变量中
   res.status(200).json({
     success: true,
     message: 'File upload limits updated successfully',
@@ -515,14 +478,9 @@ const setFileUploadLimits = async (req, res) => {
   });
 };
 
-// ==================== Platform Manager 专属功能 ====================
-// 核心职责：业务运营与战略分析
-// 用户故事：#57 (服务类别管理), #58 (生成报告), #59 (监控参与度),
-//           #60 (查看统计数据), #62 (跟踪CSR绩效)
-
 /**
- * @desc    创建/编辑/删除服务类别 (#57)
- * @access  Private (Platform Manager only)
+ * @desc    
+ * @access  
  */
 const manageCategory = async (req, res) => {
   const { action } = req.params; // create, update, delete
@@ -569,7 +527,6 @@ const manageCategory = async (req, res) => {
         throw createError('Category ID is required', 400, 'CATEGORY_ID_REQUIRED');
       }
       
-      // 检查是否有请求使用此类别
       const requestsUsingCategory = await Request.countDocuments({ category: categoryId });
       if (requestsUsingCategory > 0) {
         throw createError(
@@ -595,7 +552,7 @@ const manageCategory = async (req, res) => {
 };
 
 /**
- * @desc    生成服务请求和匹配报告 (#58)
+ * @desc   
  * @access  Private (Platform Manager only)
  */
 const generateReport = async (req, res) => {
@@ -680,7 +637,7 @@ const generateReport = async (req, res) => {
 };
 
 /**
- * @desc    监控用户参与度和增长机会 (#59)
+ * @desc    
  * @access  Private (Platform Manager only)
  */
 const getParticipationMetrics = async (req, res) => {
@@ -696,7 +653,6 @@ const getParticipationMetrics = async (req, res) => {
     engagementMetrics,
     inactiveUsers
   ] = await Promise.all([
-    // 用户增长趋势
     User.aggregate([
       { $match: { createdAt: { $gte: startDate } } },
       {
@@ -711,7 +667,6 @@ const getParticipationMetrics = async (req, res) => {
       { $sort: { '_id.date': 1 } }
     ]),
 
-    // 请求趋势
     Request.aggregate([
       { $match: { createdAt: { $gte: startDate } } },
       {
@@ -724,7 +679,6 @@ const getParticipationMetrics = async (req, res) => {
       { $sort: { '_id': 1 } }
     ]),
 
-    // 参与度指标
     Promise.all([
       User.countDocuments({ userType: 'pin', 'stats.totalRequests': { $gt: 0 } }),
       User.countDocuments({ userType: 'pin' }),
@@ -732,7 +686,6 @@ const getParticipationMetrics = async (req, res) => {
       User.countDocuments({ userType: 'csr' })
     ]),
 
-    // 不活跃用户
     User.find({
       userType: { $in: ['pin', 'csr'] },
       lastLogin: { $lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
@@ -769,7 +722,7 @@ const getParticipationMetrics = async (req, res) => {
 };
 
 /**
- * @desc    查看系统级统计数据以改进效率 (#60)
+ * @desc    
  * @access  Private (Platform Manager only)
  */
 const getEfficiencyMetrics = async (req, res) => {
@@ -780,7 +733,6 @@ const getEfficiencyMetrics = async (req, res) => {
     categoryPerformance,
     peakUsageHours
   ] = await Promise.all([
-    // 平均匹配时间
     Request.aggregate([
       { $match: { status: { $in: ['matched', 'completed'] }, matchedAt: { $exists: true } } },
       {
@@ -795,7 +747,6 @@ const getEfficiencyMetrics = async (req, res) => {
       }
     ]),
 
-    // 平均完成时间
     Request.aggregate([
       { $match: { status: 'completed', completedAt: { $exists: true } } },
       {
@@ -810,13 +761,11 @@ const getEfficiencyMetrics = async (req, res) => {
       }
     ]),
 
-    // 成功率
     Promise.all([
       Request.countDocuments({ status: 'completed' }),
       Request.countDocuments()
     ]),
 
-    // 类别性能
     Request.aggregate([
       {
         $group: {
@@ -844,7 +793,6 @@ const getEfficiencyMetrics = async (req, res) => {
       }
     ]),
 
-    // 高峰使用时段
     Request.aggregate([
       {
         $group: {
@@ -892,7 +840,7 @@ const getEfficiencyMetrics = async (req, res) => {
 };
 
 /**
- * @desc    跟踪CSR代表绩效 (#62)
+ * @desc    
  * @access  Private (Platform Manager only)
  */
 const getCsrPerformance = async (req, res) => {
@@ -910,7 +858,6 @@ const getCsrPerformance = async (req, res) => {
     .limit(parseInt(limit))
     .select('name email stats organization skills createdAt');
 
-  // 获取每个CSR的详细统计
   const detailedStats = await Promise.all(
     csrPerformance.map(async (csr) => {
       const [
@@ -968,10 +915,8 @@ const getCsrPerformance = async (req, res) => {
 };
 
 module.exports = {
-  // 通用管理员功能
   getDashboardStats,
   
-  // System Admin 专属
   getAllUsers,
   createUser,
   updateUser,
@@ -980,8 +925,7 @@ module.exports = {
   getSystemLogs,
   configureAlerts,
   setFileUploadLimits,
-  
-  // Platform Manager 专属
+
   manageCategory,
   generateReport,
   getParticipationMetrics,
