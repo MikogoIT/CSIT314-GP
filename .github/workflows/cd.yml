@@ -41,7 +41,7 @@ jobs:
         REACT_APP_API_URL: ${{ secrets.API_URL || 'http://localhost:5000/api' }}
     
     - name: Upload frontend build
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: frontend-production-build
         path: build/
@@ -58,7 +58,7 @@ jobs:
         tar -czf backend-deploy.tar.gz -C deploy .
     
     - name: Upload backend package
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: backend-deployment-package
         path: backend-deploy.tar.gz
@@ -76,13 +76,13 @@ jobs:
     
     steps:
     - name: Download frontend artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: frontend-production-build
         path: ./frontend-build
     
     - name: Download backend artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: backend-deployment-package
     
@@ -124,13 +124,13 @@ jobs:
     
     steps:
     - name: Download frontend artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: frontend-production-build
         path: ./frontend-build
     
     - name: Download backend artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: backend-deployment-package
     
